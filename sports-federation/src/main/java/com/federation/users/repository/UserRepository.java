@@ -46,15 +46,63 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     Page<User> findByStatus(UserStatus status, Pageable pageable);
 
-    @Query("""
-           SELECT u FROM User u
-           WHERE (:role   IS NULL OR u.role   = :role)
-             AND (:status IS NULL OR u.status = :status)
-           """)
-    Page<User> findAllFiltered(
-            @Param("role")   UserRole role,
-            @Param("status") UserStatus status,
-            Pageable pageable);
+        Page<User> findByRoleAndStatus(UserRole role, UserStatus status, Pageable pageable);
+
+        @Query("""
+          SELECT u FROM User u
+          WHERE LOWER(u.firstName) LIKE LOWER(CONCAT('%', :search, '%'))
+        OR LOWER(u.lastName) LIKE LOWER(CONCAT('%', :search, '%'))
+        OR LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%'))
+        OR LOWER(u.username) LIKE LOWER(CONCAT('%', :search, '%'))
+          """)
+        Page<User> search(@Param("search") String search, Pageable pageable);
+
+        @Query("""
+          SELECT u FROM User u
+          WHERE (
+           LOWER(u.firstName) LIKE LOWER(CONCAT('%', :search, '%'))
+        OR LOWER(u.lastName) LIKE LOWER(CONCAT('%', :search, '%'))
+        OR LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%'))
+        OR LOWER(u.username) LIKE LOWER(CONCAT('%', :search, '%'))
+          )
+            AND u.role = :role
+          """)
+        Page<User> searchByRole(
+           @Param("search") String search,
+           @Param("role") UserRole role,
+           Pageable pageable);
+
+        @Query("""
+          SELECT u FROM User u
+          WHERE (
+           LOWER(u.firstName) LIKE LOWER(CONCAT('%', :search, '%'))
+        OR LOWER(u.lastName) LIKE LOWER(CONCAT('%', :search, '%'))
+        OR LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%'))
+        OR LOWER(u.username) LIKE LOWER(CONCAT('%', :search, '%'))
+          )
+            AND u.status = :status
+          """)
+        Page<User> searchByStatus(
+           @Param("search") String search,
+           @Param("status") UserStatus status,
+           Pageable pageable);
+
+        @Query("""
+          SELECT u FROM User u
+          WHERE (
+           LOWER(u.firstName) LIKE LOWER(CONCAT('%', :search, '%'))
+        OR LOWER(u.lastName) LIKE LOWER(CONCAT('%', :search, '%'))
+        OR LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%'))
+        OR LOWER(u.username) LIKE LOWER(CONCAT('%', :search, '%'))
+          )
+            AND u.role = :role
+            AND u.status = :status
+          """)
+        Page<User> searchByRoleAndStatus(
+           @Param("search") String search,
+           @Param("role") UserRole role,
+           @Param("status") UserStatus status,
+           Pageable pageable);
 
     // ----------------------------------------------------------------
     // Mutations (avoid loading the entity just to change one field)

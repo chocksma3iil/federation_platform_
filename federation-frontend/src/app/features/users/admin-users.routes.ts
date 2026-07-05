@@ -8,6 +8,12 @@ export const adminUsersRoutes: Routes = [
     data: { breadcrumb: 'Users' },
   },
   {
+    path: 'new',
+    loadComponent: () =>
+      import('./user-form/user-form.component').then(m => m.UserFormComponent),
+    data: { breadcrumb: 'New User' },
+  },
+  {
     path: ':id',
     loadComponent: () =>
       import('./user-detail/user-detail.component').then(m => m.UserDetailComponent),

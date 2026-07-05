@@ -114,7 +114,7 @@ export class ClubsListComponent implements OnInit {
   searchCtrl = new FormControl('');
 
   get canManage(): boolean {
-    return this.auth.hasAnyRole([UserRole.ADMIN, UserRole.FEDERATION_STAFF, UserRole.CLUB_MANAGER]);
+    return this.auth.hasAnyRole([UserRole.ADMIN, UserRole.FEDERATION_STAFF]);
   }
 
   ngOnInit(): void {

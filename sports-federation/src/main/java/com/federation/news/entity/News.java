@@ -7,6 +7,8 @@ import com.federation.competitions.entity.Competition;
 import com.federation.users.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 import java.util.HashSet;
@@ -30,12 +32,14 @@ public class News extends BaseEntity {
     private String content;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(nullable = false, columnDefinition = "news_category")
     @Builder.Default
     private NewsCategory category = NewsCategory.GENERAL;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 15)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(nullable = false, columnDefinition = "news_status")
     @Builder.Default
     private NewsStatus status = NewsStatus.DRAFT;
 

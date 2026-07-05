@@ -8,6 +8,8 @@ import com.federation.common.response.PagedResponse;
 import com.federation.competitions.dto.CompetitionRequest;
 import com.federation.competitions.dto.CompetitionResponse;
 import com.federation.competitions.entity.Competition;
+import com.federation.competitions.entity.CompetitionFormat;
+import com.federation.competitions.entity.CompetitionLevel;
 import com.federation.competitions.entity.CompetitionStatus;
 import com.federation.competitions.mapper.CompetitionMapper;
 import com.federation.competitions.repository.CompetitionEventRepository;
@@ -18,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,9 +51,26 @@ public class CompetitionService {
         CompetitionStatus cs = parseEnum(CompetitionStatus.class, status);
         LocalDate fromDate   = parseDate(from);
         LocalDate toDate     = parseDate(to);
-        String s = blank(search) ? null : search;
+        String s = blank(search) ? null : search.trim().toLowerCase(Locale.ROOT);
 
-        Page<Competition> page = competitionRepository.findAllFiltered(s, cs, fromDate, toDate, pageable);
+        Specification<Competition> spec = Specification.where(null);
+        if (s != null) {
+            spec = spec.and((root, query, cb) -> cb.or(
+                    cb.like(cb.lower(root.get("name")), "%" + s + "%"),
+                    cb.like(cb.lower(root.get("sport")), "%" + s + "%")
+            ));
+        }
+        if (cs != null) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("status"), cs));
+        }
+        if (fromDate != null) {
+            spec = spec.and((root, query, cb) -> cb.greaterThanOrEqualTo(root.get("startDate"), fromDate));
+        }
+        if (toDate != null) {
+            spec = spec.and((root, query, cb) -> cb.lessThanOrEqualTo(root.get("endDate"), toDate));
+        }
+
+        Page<Competition> page = competitionRepository.findAll(spec, pageable);
 
         Page<CompetitionResponse> mapped = page.map(c -> {
             CompetitionResponse r = competitionMapper.toResponse(c);
@@ -86,7 +106,7 @@ public class CompetitionService {
         validateDates(request);
         Competition competition = competitionMapper.toEntity(request);
         competition.setSlug(generateUniqueSlug(request.getName()));
-        if (competition.getStatus() == null) competition.setStatus(CompetitionStatus.DRAFT);
+        applyDefaults(competition);
         resolveRelations(competition, request);
         Competition saved = competitionRepository.save(competition);
         log.info("Competition created: {} ({})", saved.getName(), saved.getId());
@@ -99,6 +119,7 @@ public class CompetitionService {
         validateDates(request);
         Competition competition = getOrThrow(id);
         competitionMapper.updateEntity(request, competition);
+        applyDefaults(competition);
         resolveRelations(competition, request);
         Competition saved = competitionRepository.save(competition);
         log.info("Competition updated: {}", id);
@@ -143,6 +164,24 @@ public class CompetitionService {
         if (request.getRegistrationDeadline() != null && request.getStartDate() != null
                 && request.getRegistrationDeadline().isAfter(request.getStartDate())) {
             throw new BadRequestException("Registration deadline must be before start date.");
+        }
+    }
+
+    private void applyDefaults(Competition competition) {
+        if (competition.getLevel() == null) {
+            competition.setLevel(CompetitionLevel.NATIONAL);
+        }
+        if (competition.getFormat() == null) {
+            competition.setFormat(CompetitionFormat.INDIVIDUAL);
+        }
+        if (blank(competition.getVenueCountry())) {
+            competition.setVenueCountry("TN");
+        }
+        if (blank(competition.getCurrency())) {
+            competition.setCurrency("TND");
+        }
+        if (competition.getStatus() == null) {
+            competition.setStatus(CompetitionStatus.DRAFT);
         }
     }
 

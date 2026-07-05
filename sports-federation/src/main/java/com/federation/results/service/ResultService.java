@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,7 +48,21 @@ public class ResultService {
                                                   UUID athleteId, String status,
                                                   Pageable pageable) {
         String rs = normalizeStatus(status);
-        Page<Result> page = resultRepository.findAllFiltered(competitionId, eventId, athleteId, rs, pageable);
+        Specification<Result> spec = Specification.where(null);
+        if (competitionId != null) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("competition").get("id"), competitionId));
+        }
+        if (eventId != null) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("event").get("id"), eventId));
+        }
+        if (athleteId != null) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("athlete").get("id"), athleteId));
+        }
+        if (rs != null) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("status"), rs));
+        }
+
+        Page<Result> page = resultRepository.findAll(spec, pageable);
 
         // Enrich with ranking positions
         Page<ResultResponse> mapped = page.map(result -> {

@@ -15,7 +15,9 @@ import java.util.UUID;
 public interface ClubRepository extends JpaRepository<Club, UUID> {
 
     Optional<Club> findBySlug(String slug);
+    Optional<Club> findByNameIgnoreCase(String name);
     Optional<Club> findByLicenseNumber(String licenseNumber);
     boolean existsBySlug(String slug);
+    boolean existsByNameIgnoreCase(String name);
     boolean existsByLicenseNumber(String licenseNumber);
 }

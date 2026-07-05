@@ -24,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -57,9 +58,20 @@ public class NewsService {
                                                 String category, Pageable pageable) {
         NewsStatus   ns = parseEnum(NewsStatus.class, status);
         NewsCategory nc = parseEnum(NewsCategory.class, category);
-        String s = blank(search) ? null : search;
+        String s = blank(search) ? null : search.trim().toLowerCase(Locale.ROOT);
 
-        Page<News> page = newsRepository.findAllFiltered(s, ns, nc, pageable);
+        Specification<News> spec = Specification.where(null);
+        if (s != null) {
+            spec = spec.and((root, query, cb) -> cb.like(cb.lower(root.get("title")), "%" + s + "%"));
+        }
+        if (ns != null) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("status"), ns));
+        }
+        if (nc != null) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("category"), nc));
+        }
+
+        Page<News> page = newsRepository.findAll(spec, pageable);
         return PagedResponse.of(page.map(this::toResponse));
     }
 

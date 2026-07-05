@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.text.Normalizer;
 import java.util.Locale;
 import java.util.UUID;
+import java.util.Objects;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -78,6 +79,11 @@ public class ClubService {
     @Transactional
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_FEDERATION_STAFF')")
     public ClubResponse create(ClubRequest request) {
+        normalize(request);
+        if (clubRepository.existsByNameIgnoreCase(request.getName())) {
+            throw new ResourceAlreadyExistsException(
+                    "A club named '" + request.getName() + "' already exists.");
+        }
         if (clubRepository.existsByLicenseNumber(request.getLicenseNumber())) {
             throw new ResourceAlreadyExistsException(
                     "A club with license number '" + request.getLicenseNumber() + "' already exists.");
@@ -93,8 +99,22 @@ public class ClubService {
     @Transactional
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_FEDERATION_STAFF','ROLE_CLUB_MANAGER')")
     public ClubResponse update(UUID id, ClubRequest request) {
+        normalize(request);
         Club club = clubRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Club", "id", id));
+
+        if (request.getName() != null && !request.getName().equalsIgnoreCase(club.getName())
+            && clubRepository.existsByNameIgnoreCase(request.getName())) {
+            throw new ResourceAlreadyExistsException(
+                "A club named '" + request.getName() + "' already exists.");
+        }
+
+        if (request.getLicenseNumber() != null && !Objects.equals(request.getLicenseNumber(), club.getLicenseNumber())
+            && clubRepository.existsByLicenseNumber(request.getLicenseNumber())) {
+            throw new ResourceAlreadyExistsException(
+                "A club with license number '" + request.getLicenseNumber() + "' already exists.");
+        }
+
         clubMapper.updateEntity(request, club);
         Club saved = clubRepository.save(club);
         log.info("Club updated: {}", saved.getId());
@@ -126,5 +146,20 @@ public class ClubService {
             slug = base + "-" + counter++;
         }
         return slug;
+    }
+
+    private void normalize(ClubRequest request) {
+        if (request.getName() != null) {
+            request.setName(request.getName().trim());
+        }
+        if (request.getLicenseNumber() != null) {
+            request.setLicenseNumber(request.getLicenseNumber().trim());
+        }
+        if (request.getShortName() != null && !request.getShortName().isBlank()) {
+            request.setShortName(request.getShortName().trim().toUpperCase(Locale.ROOT));
+        }
+        if (request.getCountry() != null && !request.getCountry().isBlank()) {
+            request.setCountry(request.getCountry().trim());
+        }
     }
 }

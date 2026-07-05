@@ -44,6 +44,14 @@ import { LoadingSpinnerComponent } from '@shared/components/loading-spinner/load
             Personal Information
           </h3>
 
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>License Number</mat-label>
+            <input matInput formControlName="licenseNumber" />
+            @if (f['licenseNumber'].hasError('required') && f['licenseNumber'].touched) {
+              <mat-error>Required</mat-error>
+            }
+          </mat-form-field>
+
           <div class="grid grid-cols-2 gap-4">
             <mat-form-field appearance="outline">
               <mat-label>First Name</mat-label>
@@ -151,6 +159,7 @@ export class AthleteFormComponent implements OnInit {
   athleteId?: string;
 
   form = this.fb.group({
+    licenseNumber: ['', Validators.required],
     firstName:   ['', Validators.required],
     lastName:    ['', Validators.required],
     dateOfBirth: ['', Validators.required],

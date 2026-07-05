@@ -102,9 +102,12 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.GET, "/clubs/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/competitions/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/news/**").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/results/**").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/users/**").permitAll()
 
-                    // Admin-only
-                    .requestMatchers(ADMIN_URLS).hasAuthority(UserRole.ADMIN)
+                    // Admin + federation staff
+                    .requestMatchers(ADMIN_URLS)
+                            .hasAnyAuthority(UserRole.ADMIN, UserRole.FEDERATION_STAFF)
 
                     // Club management — admin or club manager
                     .requestMatchers(HttpMethod.POST, "/clubs/**")
