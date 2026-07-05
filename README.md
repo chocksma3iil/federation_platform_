@@ -7,19 +7,17 @@ A full-stack national sports federation management system built with **Spring Bo
 ## 📋 Table of Contents
 
 - [Overview](#overview)
+- [Prerequisites & Downloads](#prerequisites--downloads)
+- [Complete Setup Guide](#complete-setup-guide)
+- [Running the Project](#running-the-project)
 - [Tech Stack](#tech-stack)
-- [Quick Start](#quick-start)
-- [Prerequisites](#prerequisites)
 - [Architecture](#architecture)
 - [Features](#features)
 - [Project Structure](#project-structure)
-- [Local Setup](#local-setup)
 - [Default Accounts](#default-accounts)
 - [API Documentation](#api-documentation)
 - [Environment Variables](#environment-variables)
-- [Database Migrations](#database-migrations)
-- [Role-Based Access Control](#role-based-access-control)
-- [Screenshots](#screenshots)
+- [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -39,87 +37,140 @@ The Sports Federation Platform is a production-grade web application designed fo
 
 ---
 
-## 🚀 QUICK START — 3 SIMPLE STEPS
+## Prerequisites & Downloads
 
-> **Everything is bundled in the project** (Java 21, Maven, Node.js). You only need PostgreSQL installed locally.
+Before starting, ensure you have downloaded or installed these tools:
+
+| Tool | Version | Download Link | Alternative |
+|------|---------|---------------|-------------|
+| **Java JDK** | 21+ | [oracle.com/java](https://www.oracle.com/java/technologies/downloads/) | Install globally or in project folder |
+| **Maven** | 3.9+ | [maven.apache.org](https://maven.apache.org/download.cgi) | Place in Downloads, use full path in commands |
+| **Node.js** | 22+ (LTS) | [nodejs.org](https://nodejs.org/) | Place in Downloads, use full path in commands |
+| **PostgreSQL** | 16+ | [postgresql.org/download](https://www.postgresql.org/download/windows/) | Install globally |
+| **Git** | Latest | [git-scm.com](https://git-scm.com/) | Required for version control |
+
+### ✅ Typical Setup Paths
+
+```
+C:\Program Files\PostgreSQL\17\           # PostgreSQL (installed globally)
+C:\Program Files\Java\jdk-21\             # Java (installed globally)
+C:\Users\YourUser\Downloads\apache-maven-3.9.16-bin\apache-maven-3.9.16\  # Maven
+C:\Users\YourUser\Downloads\node-v22.16.0-win-x64\node-v22.16.0-win-x64\  # Node
+```
 
 ---
 
-## ⚡ STEP 1: Create Database (First Time Only)
+## Complete Setup Guide
+
+### Step 1: PostgreSQL Database Setup
+
+Open PowerShell **as Administrator** and create the database:
 
 ```powershell
 $env:PGPASSWORD = "azerty990"
 & "C:\Program Files\PostgreSQL\17\bin\psql.exe" -U postgres -c "CREATE DATABASE federation_db;"
 ```
 
-If you see `CREATE DATABASE` → done! If you see "already exists" → that's fine, skip to Step 2.
+You should see: `CREATE DATABASE` (or "already exists" if run before)
 
----
-
-## ⚡ STEP 2: Start Backend (PowerShell Window 1)
-
-**Copy-paste this entire block:**
+### Step 2: Clone & Navigate to Project
 
 ```powershell
-$env:JAVA_HOME = "C:\Users\ichock\Desktop\pi\federation-platform\sports-federation\.tools\jdk-21.0.11+10"
-$env:Path = "$env:JAVA_HOME\bin;$env:Path"
-cd C:\Users\ichock\Desktop\pi\federation-platform\sports-federation
-& ".\.tools\apache-maven-3.9.9\bin\mvn.cmd" "-Dmaven.test.skip=true" spring-boot:run
+# Clone the repository
+git clone https://github.com/chocksma3iil/federation_platform_.git
+cd federation_platform_
 ```
 
-Wait until you see: `Tomcat started on port(s): 8081`
+### Step 3: Backend Build & Run
 
-✅ Backend ready! Leave this window open.
+#### Build Backend JAR
 
----
-
-## ⚡ STEP 3: Start Frontend (PowerShell Window 2)
-
-**Open a NEW PowerShell window** and copy-paste:
+Navigate to the backend folder and build:
 
 ```powershell
-$env:Path = "C:\Users\ichock\Desktop\pi\federation-platform\federation-frontend\.tools\node-v22.16.0-win-x64;" + $env:Path
+cd sports-federation
+$mavenPath = "C:\Users\ichock\Downloads\apache-maven-3.9.16-bin\apache-maven-3.9.16\bin"
+& "$mavenPath\mvn.cmd" -f "pom.xml" clean package -DskipTests
+```
+
+Expected output: `BUILD SUCCESS` after ~40 seconds
+
+#### Run Backend Server
+
+```powershell
+java -jar "target\sports-federation-1.0.0-SNAPSHOT.jar"
+```
+
+Wait for: `Tomcat started on port(s): 8081`
+
+✅ Backend ready at: **http://localhost:8081/api**
+
+### Step 4: Frontend Setup & Run (New PowerShell Window)
+
+#### Navigate to Frontend
+
+```powershell
 cd C:\Users\ichock\Desktop\pi\federation-platform\federation-frontend
-npm start
 ```
 
-Wait until you see: `Local: http://localhost:4200/`
+#### Set Node Path & Install Dependencies
 
-✅ Frontend ready! Leave this window open.
+```powershell
+$env:Path = "C:\Users\ichock\Downloads\node-v24.15.0-win-x64\node-v24.15.0-win-x64\bin;" + $env:Path
+& "C:\Users\ichock\Downloads\node-v24.15.0-win-x64\node-v24.15.0-win-x64\npm.cmd" install
+```
 
----
+Expected: `up to date, audited 988 packages`
 
-## 🎉 DONE! Open the App
+#### Start Angular Dev Server
 
-**Go to:** http://localhost:4200
+```powershell
+& "C:\Users\ichock\Downloads\node-v24.15.0-win-x64\node-v24.15.0-win-x64\npm.cmd" start
+```
 
-**Login:**
-| Email | Password | Role |
-|---|---|---|
-| `admin@federation.local` | `Admin@1234` | Admin (full access) |
-| `staff@federation.local` | `Test@1234` | Staff |
-| `athlete.ferjani@federation.local` | `Test@1234` | Athlete |
+Wait for: `Local: http://localhost:4200/`
 
----
+✅ Frontend ready at: **http://localhost:4200**
 
-## ⏹️ To Stop
+### Step 5: Login
 
-Press `Ctrl + C` in each PowerShell window.
-
----
-
-## ❓ Troubleshooting
-
-| Problem | Fix |
-|---|---|
-| Port 8081 already in use | `netstat -ano \| findstr :8081` then `taskkill /PID XXXX /F` |
-| Database connection failed | Check PostgreSQL is running: `net start postgresql-x64-17` |
-| Frontend blank page | Stop with Ctrl+C, then `npm start` again |
-| `npm install` needed (first time) | Run `npm install` before `npm start` in the frontend folder |
+1. Open browser → **http://localhost:4200**
+2. Enter credentials:
+   - Email: `admin@federation.local`
+   - Password: `Admin@1234`
+3. You're in! 🎉
 
 ---
 
+## Running the Project (Quick Reference)
+
+### Terminal 1: Backend
+
+```powershell
+cd C:\Users\ichock\Desktop\pi\federation-platform\sports-federation
+java -jar "target\sports-federation-1.0.0-SNAPSHOT.jar"
+```
+
+### Terminal 2: Frontend
+
+```powershell
+$env:Path = "C:\Users\ichock\Downloads\node-v24.15.0-win-x64\node-v24.15.0-win-x64\bin;" + $env:Path
+cd C:\Users\ichock\Desktop\pi\federation-platform\federation-frontend
+& "npm.cmd" start
+```
+
+### Terminal 3: Git Updates (Optional)
+
+```powershell
+cd C:\Users\ichock\Desktop\pi\federation-platform
+git add .
+git commit -m "Your message"
+git push
+```
+
 ---
+
+## Tech Stack
 
 ### Backend
 | Technology | Version | Purpose |
@@ -150,36 +201,35 @@ Press `Ctrl + C` in each PowerShell window.
 ### Infrastructure
 | Technology | Purpose |
 |---|---|
-| PostgreSQL 16 | Production-grade relational database |
-| Flyway | Database schema versioning & migrations |
-| Windows PowerShell | Terminal for running commands |
+| Docker & Docker Compose | PostgreSQL container |
+| pgAdmin 4 | Database browser (optional) |
 
 ---
 
 ## Architecture
 
 ```
-┌──────────────────────────────────────────────────────────┐
-│                  Angular 19 SPA                          │
-│        (http://localhost:4200 → proxy to :8081/api)     │
+┌─────────────────────────────────────────────────────────┐
+│                    Angular 19 SPA                        │
+│         (localhost:4200 → proxy → :8081/api)            │
 │                                                          │
-│  ┌────────────┐  ┌────────────┐  ┌────────────┐         │
-│  │   Login    │  │   Admin    │  │   Portal   │         │
-│  │            │  │ Dashboard  │  │  (Athlete) │         │
-│  └────────────┘  └────────────┘  └────────────┘         │
-└────────────────────┬─────────────────────────────────────┘
-                     │ HTTP + JWT Token
-┌────────────────────▼─────────────────────────────────────┐
-│            Spring Boot 3 REST API (Port 8081)            │
-│            (http://localhost:8081/api)                   │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌────────┐  │
+│  │  Auth    │  │  Admin   │  │  Portal  │  │ Public │  │
+│  │  Module  │  │ Dashboard│  │ (Athlete)│  │ Pages  │  │
+│  └──────────┘  └──────────┘  └──────────┘  └────────┘  │
+└────────────────────────┬────────────────────────────────┘
+                         │ HTTP + JWT
+┌────────────────────────▼────────────────────────────────┐
+│               Spring Boot 3 REST API                     │
+│                  (localhost:8081/api)                    │
 │                                                          │
-│  ┌────────┐  ┌─────────┐  ┌──────────┐  ┌─────────┐    │
-│  │  Auth  │  │ Athlete │  │   Club   │  │Competi- │    │
-│  │        │  │         │  │          │  │ tion    │    │
-│  └────────┘  └─────────┘  └──────────┘  └─────────┘    │
+│  ┌──────┐ ┌───────┐ ┌──────────┐ ┌────────┐ ┌───────┐  │
+│  │ Auth │ │Athlete│ │   Club   │ │Competi-│ │ News  │  │
+│  │      │ │       │ │          │ │  tion  │ │       │  │
+│  └──────┘ └───────┘ └──────────┘ └────────┘ └───────┘  │
 │                                                          │
-│  Spring Security → JWT → DB (PostgreSQL)                │
-└──────────────────────────────────────────────────────────┘
+│  Spring Security Filter Chain → JWT Validation          │
+│  Flyway Migrations → JPA/Hibernate → HikariCP           │
 └────────────────────────┬────────────────────────────────┘
                          │ JDBC
 ┌────────────────────────▼────────────────────────────────┐
@@ -290,88 +340,6 @@ federation-platform/
 
 All commands below are for **Windows**. You can use either **PowerShell** or **Command Prompt (cmd)** — pick whichever you prefer.
 
-### CMD Step-by-Step (First Time)
-
-Use this if you are on **Command Prompt (cmd)** and running the project for the first time.
-
-1. Open `cmd` and go to the repo root:
-
-```cmd
-cd C:\Users\ichock\Desktop\pi\federation-platform
-```
-
-2. Create the database once:
-
-```cmd
-set PGPASSWORD=azerty990
-"C:\Program Files\PostgreSQL\17\bin\psql.exe" -U postgres -c "CREATE DATABASE federation_db;"
-```
-
-3. Install frontend dependencies once:
-
-```cmd
-cd federation-frontend
-path=%CD%\.tools\node-v22.16.0-win-x64;%CD%\.tools\node-v22.16.0-win-x64\node_modules\.bin;%PATH%
-npm install
-cd ..
-```
-
-4. Apply the Windows line-ending fix once (or after every new `npm install`):
-
-```cmd
-powershell -Command ^
-  "$f = 'federation-frontend\node_modules\@angular\build\node_modules\vite\dist\client\client.mjs'; " ^
-  "$c = [System.IO.File]::ReadAllText($f); " ^
-  "$c = $c -replace '`r`n', '`n'; " ^
-  "[System.IO.File]::WriteAllText($f, $c)"
-```
-
-5. Start backend in a **new CMD window**:
-
-```cmd
-set JAVA_HOME=C:\Users\ichock\Desktop\pi\federation-platform\sports-federation\.tools\jdk-21.0.11+10
-set PATH=%JAVA_HOME%\bin;%PATH%
-"C:\Users\ichock\Desktop\pi\federation-platform\sports-federation\.tools\apache-maven-3.9.9\bin\mvn.cmd" -f "C:\Users\ichock\Desktop\pi\federation-platform\sports-federation\pom.xml" "-Dmaven.test.skip=true" spring-boot:run "-Dspring-boot.run.jvmArguments=-Dserver.port=8081"
-```
-
-6. Start frontend in another **new CMD window**:
-
-```cmd
-cd C:\Users\ichock\Desktop\pi\federation-platform
-set PATH=%CD%\federation-frontend\.tools\node-v22.16.0-win-x64;%CD%\federation-frontend\.tools\node-v22.16.0-win-x64\node_modules\.bin;%PATH%
-cd federation-frontend
-npm start
-```
-
-7. Open the app:
-
-- Frontend: `http://localhost:4200`
-- Backend API base: `http://localhost:8081/api`
-- Swagger: `http://localhost:8081/api/swagger-ui.html`
-
-### CMD Step-by-Step (Every Next Time)
-
-After first-time setup, only run the two startup terminals:
-
-1. Backend terminal (CMD):
-
-```cmd
-set JAVA_HOME=C:\Users\ichock\Desktop\pi\federation-platform\sports-federation\.tools\jdk-21.0.11+10
-set PATH=%JAVA_HOME%\bin;%PATH%
-"C:\Users\ichock\Desktop\pi\federation-platform\sports-federation\.tools\apache-maven-3.9.9\bin\mvn.cmd" -f "C:\Users\ichock\Desktop\pi\federation-platform\sports-federation\pom.xml" "-Dmaven.test.skip=true" spring-boot:run "-Dserver.port=8081"
-```
-
-2. Frontend terminal (CMD):
-
-```cmd
-cd C:\Users\ichock\Desktop\pi\federation-platform
-set PATH=%CD%\federation-frontend\.tools\node-v22.16.0-win-x64;%CD%\federation-frontend\.tools\node-v22.16.0-win-x64\node_modules\.bin;%PATH%
-cd federation-frontend
-npm start
-```
-
-If frontend is blank after reinstalling node modules, run the Vite line-ending fix again.
-
 ---
 
 ### 🎯 First-time setup (do this once after cloning)
@@ -466,23 +434,21 @@ Once first-time setup is complete, run these two commands in **separate terminal
 
 #### Terminal 1: Start the backend (Spring Boot)
 
-> **Important:** Always run these commands from the **repo root** (`federation-platform/`). Do not `cd` into `sports-federation` first.
-
-**Using PowerShell (recommended):**
+**Using PowerShell:**
 ```powershell
-$env:JAVA_HOME = "C:\Users\ichock\Desktop\pi\federation-platform\sports-federation\.tools\jdk-21.0.11+10"
-$env:Path = "$env:JAVA_HOME\bin;$env:Path"
-& "C:\Users\ichock\Desktop\pi\federation-platform\sports-federation\.tools\apache-maven-3.9.9\bin\mvn.cmd" `
-    -f "C:\Users\ichock\Desktop\pi\federation-platform\sports-federation\pom.xml" `
-    "-Dmaven.test.skip=true" spring-boot:run `
+$env:JAVA_HOME = "$PWD\sports-federation\.tools\jdk-21.0.11+10"
+$env:Path      = "$env:JAVA_HOME\bin;$env:Path"
+Set-Location sports-federation
+..\.tools\apache-maven-3.9.9\bin\mvn.cmd -DskipTests spring-boot:run `
     "-Dspring-boot.run.jvmArguments=-Dserver.port=8081"
 ```
 
 **Using Command Prompt (cmd):**
 ```cmd
-set JAVA_HOME=C:\Users\ichock\Desktop\pi\federation-platform\sports-federation\.tools\jdk-21.0.11+10
+set JAVA_HOME=%CD%\sports-federation\.tools\jdk-21.0.11+10
 set PATH=%JAVA_HOME%\bin;%PATH%
-"C:\Users\ichock\Desktop\pi\federation-platform\sports-federation\.tools\apache-maven-3.9.9\bin\mvn.cmd" -f "C:\Users\ichock\Desktop\pi\federation-platform\sports-federation\pom.xml" "-Dmaven.test.skip=true" spring-boot:run "-Dspring-boot.run.jvmArguments=-Dserver.port=8081"
+cd sports-federation
+..\tools\apache-maven-3.9.9\bin\mvn.cmd -DskipTests spring-boot:run "-Dspring-boot.run.jvmArguments=-Dserver.port=8081"
 ```
 
 **Wait for this message:**
@@ -537,6 +503,64 @@ These accounts are **seeded automatically** on the first backend startup. Use th
 
 ---
 
+## Default Accounts
+
+These accounts are seeded automatically on the first backend startup:
+
+| Email | Password | Role |
+|---|---|---|
+| `admin@federation.local` | `Admin@1234` | **Admin** |
+| `staff@federation.local` | `Test@1234` | **Federation Staff** |
+| `manager.esperance@federation.local` | `Test@1234` | **Club Manager** |
+| `athlete.ferjani@federation.local` | `Test@1234` | **Athlete** |
+
+---
+
+## Environment Variables
+
+### Backend (application.yml)
+
+The backend is configured in [sports-federation/src/main/resources/application.yml](sports-federation/src/main/resources/application.yml):
+
+```yaml
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/federation_db
+    username: postgres
+    password: azerty990
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+server:
+  port: 8081
+  servlet:
+    context-path: /api
+
+jwt:
+  secret: your-secret-key-change-in-production
+  expiration: 900000        # 15 minutes
+  refresh-expiration: 604800000  # 7 days
+```
+
+### Frontend (environment.ts)
+
+The frontend is configured in [federation-frontend/src/environments/environment.ts](federation-frontend/src/environments/environment.ts):
+
+```typescript
+export const environment = {
+  production: false,
+  apiUrl: 'http://localhost:8081/api'
+};
+```
+
+---
+
 ## API Documentation
 
 Once the backend is running, Swagger UI is available at:
@@ -561,6 +585,359 @@ curl http://localhost:8081/api/auth/me \
 curl http://localhost:8081/api/athletes?page=0&size=10 \
   -H "Authorization: Bearer <your_access_token>"
 ```
+
+### Response format
+
+All endpoints return:
+
+```json
+{
+  "success": true,
+  "data": { },
+  "message": "Success",
+  "timestamp": "2024-06-07T12:00:00Z"
+}
+```
+
+---
+
+## Troubleshooting
+
+### ❌ "npm: command not found" or npm install fails
+
+**Problem:** npm is not in your PATH.
+
+**Solution — PowerShell:**
+
+```powershell
+# Check if node exists
+Get-Item C:\Users\ichock\Downloads\node-v24.15.0-win-x64\bin\npm.cmd
+
+# If found, set PATH before running npm
+$node = "C:\Users\ichock\Downloads\node-v24.15.0-win-x64"
+$env:Path = "$node\bin;$env:Path"
+npm --version
+```
+
+**Solution — Command Prompt (cmd):**
+
+```cmd
+path C:\Users\ichock\Downloads\node-v24.15.0-win-x64\bin;%PATH%
+npm --version
+```
+
+---
+
+### ❌ "Cannot find module @angular/build" or blank white page on http://localhost:4200
+
+**Problem:** Vite client file has wrong line endings (CRLF instead of LF on Windows).
+
+**Solution:**
+
+```powershell
+$f = "federation-frontend\node_modules\@angular\build\node_modules\vite\dist\client\client.mjs"
+$c = [System.IO.File]::ReadAllText($f)
+$c = $c -replace "`r`n", "`n"
+[System.IO.File]::WriteAllText($f, $c)
+```
+
+Or use VS Code: Open the file, click "CRLF" in bottom-right, select "LF", and save.
+
+Then restart the Angular dev server (press Ctrl+C in Terminal 2, then run again).
+
+---
+
+### ❌ "Database federation_db does not exist"
+
+**Problem:** Database wasn't created before starting the backend.
+
+**Solution:**
+
+```powershell
+$env:PGPASSWORD = "azerty990"
+& "C:\Program Files\PostgreSQL\17\bin\psql.exe" -U postgres -c "CREATE DATABASE federation_db;"
+```
+
+Restart the backend. Flyway will auto-create all tables.
+
+---
+
+### ❌ "Connection refused on localhost:8081"
+
+**Problem:** Backend didn't start or is listening on wrong port.
+
+**Solution:**
+
+1. Check if Maven command is running (look for "Tomcat started" message)
+2. If using `.tools` folder:
+   ```powershell
+   # Restart backend with explicit port
+   $env:JAVA_HOME = "$PWD\sports-federation\.tools\jdk-21.0.11+10"
+   $env:Path      = "$env:JAVA_HOME\bin;$env:Path"
+   cd sports-federation
+   ..\.tools\apache-maven-3.9.9\bin\mvn.cmd -DskipTests spring-boot:run
+   ```
+3. Wait for: `Tomcat started on port(s): 8081`
+
+---
+
+### ❌ "Connection refused on localhost:4200"
+
+**Problem:** Angular dev server didn't start or crashed.
+
+**Solution:**
+
+1. Check Terminal 2 for errors (look for "Local: http://localhost:4200")
+2. Verify Node PATH:
+   ```powershell
+   $node = "$PWD\federation-frontend\.tools\node-v22.16.0-win-x64"
+   $env:Path = "$node;$env:Path"
+   node --version   # Should show v22.16.0
+   npm --version
+   ```
+3. Re-run:
+   ```powershell
+   cd federation-frontend
+   npx ng serve --proxy-config proxy.conf.json
+   ```
+
+---
+
+### ❌ "psql: command not found"
+
+**Problem:** PostgreSQL is not installed or not in PATH.
+
+**Solution:**
+
+1. Verify PostgreSQL installed to `C:\Program Files\PostgreSQL\17`:
+   ```powershell
+   Get-Item "C:\Program Files\PostgreSQL\17\bin\psql.exe"
+   ```
+2. If not found, download from: https://www.postgresql.org/download/windows/
+3. Set PATH before running psql:
+   ```powershell
+   $env:Path = "C:\Program Files\PostgreSQL\17\bin;$env:Path"
+   psql --version
+   ```
+
+---
+
+### ❌ Login fails with "Invalid credentials"
+
+**Problem:** Wrong email/password or admin account not seeded.
+
+**Solution:**
+
+1. Verify backend is running and Flyway migrations completed
+2. Check backend logs for migration success:
+   ```
+   Migrating schema...
+   V1__init_schema.sql
+   V2__seed_admin_user.sql
+   ```
+3. Try these credentials (case-sensitive):
+   - Email: `admin@federation.local`
+   - Password: `Admin@1234`
+4. If still failing, restart backend (Flyway runs on startup)
+
+---
+
+### ❌ "maven: command not found"
+
+**Problem:** Maven is not in PATH.
+
+**Solution — PowerShell:**
+
+```powershell
+# Using .tools folder
+$mvn = "$PWD\sports-federation\.tools\apache-maven-3.9.9\bin"
+& "$mvn\mvn.cmd" --version
+
+# Or using Downloads folder
+& "C:\Users\ichock\Downloads\apache-maven-3.9.16-bin\apache-maven-3.9.16\bin\mvn.cmd" --version
+```
+
+**Solution — Command Prompt (cmd):**
+
+```cmd
+# Using .tools folder
+set PATH=%CD%\sports-federation\.tools\apache-maven-3.9.9\bin;%PATH%
+mvn --version
+
+# Or using Downloads folder
+set PATH=C:\Users\ichock\Downloads\apache-maven-3.9.16-bin\apache-maven-3.9.16\bin;%PATH%
+mvn --version
+```
+
+---
+
+### ❌ "JAVA_HOME is not set"
+
+**Problem:** Java location not configured.
+
+**Solution — PowerShell:**
+
+```powershell
+# Using .tools folder
+$env:JAVA_HOME = "$PWD\sports-federation\.tools\jdk-21.0.11+10"
+$env:Path       = "$env:JAVA_HOME\bin;$env:Path"
+java -version
+
+# Or using global Java 21
+$env:JAVA_HOME = "C:\Program Files\Java\jdk-21"
+$env:Path       = "$env:JAVA_HOME\bin;$env:Path"
+java -version
+```
+
+**Solution — Command Prompt (cmd):**
+
+```cmd
+# Using .tools folder
+set JAVA_HOME=%CD%\sports-federation\.tools\jdk-21.0.11+10
+set PATH=%JAVA_HOME%\bin;%PATH%
+java -version
+
+# Or using global Java 21
+set JAVA_HOME=C:\Program Files\Java\jdk-21
+set PATH=%JAVA_HOME%\bin;%PATH%
+java -version
+```
+
+---
+
+### ❌ Port 8081 or 4200 already in use
+
+**Problem:** Another process is using the port (previous backend/frontend instance).
+
+**Solution:**
+
+```powershell
+# Find process on port 8081 (backend)
+netstat -ano | findstr :8081
+
+# Find process on port 4200 (frontend)
+netstat -ano | findstr :4200
+
+# Kill process by PID (replace XXXX with PID from above)
+Stop-Process -Id XXXX -Force
+```
+
+**Or restart both terminals and try again.**
+
+---
+
+### ❌ Git push fails: "fatal: 'origin' does not appear to be a 'git' repository"
+
+**Problem:** Git remote not configured.
+
+**Solution:**
+
+```powershell
+git remote -v   # Should show 'origin' → GitHub URL
+
+# If empty, add the remote
+git remote add origin https://github.com/chocksma3iil/federation_platform_.git
+
+# Verify
+git remote -v
+
+# Push
+git push -u origin main
+```
+
+---
+
+### ✅ Still stuck?
+
+Check the terminal output for these keywords:
+
+| Message | Meaning | Action |
+|---|---|---|
+| `BUILD SUCCESS` | Backend compiled | Run `java -jar` |
+| `BUILD FAILURE` | Compilation error | Check Maven output for Java errors |
+| `Application bundle generation complete` | Frontend ready | Open http://localhost:4200 |
+| `ERROR` in Angular | Frontend error | Check browser DevTools (F12) Console tab |
+| `Tomcat started on port(s): 8081` | Backend listening | Good to go |
+| `Connection refused` | Backend not running | Restart it in Terminal 1 |
+| `403 Forbidden` | Wrong JWT token | Log in again |
+| `404 Not Found` | Endpoint typo or backend not running | Check URL and port 8081 |
+
+---
+
+## Development Tips
+
+### File watching & hot reload
+
+**Backend:** Changes to Java files require recompile — not automatic in `spring-boot:run` mode. Use your IDE or run `mvn clean package` + restart the JAR.
+
+**Frontend:** Changes to `.ts`, `.html`, `.scss` files auto-reload the browser. Just save and check http://localhost:4200.
+
+### Debugging the backend
+
+Add breakpoints in VS Code:
+1. Install Extension: "Debugger for Java" (Microsoft)
+2. In [sports-federation/pom.xml](sports-federation/pom.xml), add:
+   ```xml
+   -Drun.jvmArguments="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005"
+   ```
+3. Attach VS Code debugger to localhost:5005
+
+### Debugging the frontend
+
+Press **F12** in the browser to open DevTools:
+- **Sources** tab: Set breakpoints in `.ts` files
+- **Console** tab: View logs and errors
+- **Network** tab: Inspect API calls
+
+### Database browser
+
+Access pgAdmin 4 (optional):
+
+```bash
+docker-compose -f sports-federation/docker-compose.yml up pgadmin
+```
+
+Then open: http://localhost:5050 (login: `admin@admin.com` / `admin`)
+
+---
+
+## Production Build
+
+### Build backend JAR for deployment
+
+```powershell
+$mvn = "C:\Users\ichock\Downloads\apache-maven-3.9.16-bin\apache-maven-3.9.16\bin"
+& "$mvn\mvn.cmd" -f "sports-federation\pom.xml" clean package -DskipTests
+# Output: sports-federation/target/sports-federation-1.0.0-SNAPSHOT.jar
+```
+
+### Build frontend for deployment
+
+```powershell
+$node = "C:\Users\ichock\Downloads\node-v24.15.0-win-x64"
+$env:Path = "$node\bin;$env:Path"
+cd federation-frontend
+npm run build   # Output: dist/
+```
+
+---
+
+## Contributors
+
+| Role | GitHub |
+|---|---|
+| Project Lead | [@chocksma3iil](https://github.com/chocksma3iil) |
+
+---
+
+## License
+
+This project is licensed under the **MIT License** — see LICENSE file for details.
+
+---
+
+**Last updated:** 2024-06-07  
+**Repository:** https://github.com/chocksma3iil/federation_platform_
 
 ### API Response format
 
