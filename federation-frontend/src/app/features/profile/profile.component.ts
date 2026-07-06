@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { CommonModule }       from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { MatTabsModule }      from '@angular/material/tabs';
@@ -92,6 +92,11 @@ import { ChangePasswordRequest }   from '@core/models';
                   </mat-form-field>
                 </div>
                 <mat-form-field appearance="outline" class="w-full mb-4">
+                  <mat-label>Role</mat-label>
+                  <input matInput [value]="roleLabel()" readonly />
+                  <mat-icon matPrefix class="mr-2">badge</mat-icon>
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="w-full mb-4">
                   <mat-label>Phone</mat-label>
                   <input matInput formControlName="phone" type="tel" />
                   <mat-icon matPrefix class="mr-2">phone</mat-icon>
@@ -154,6 +159,7 @@ export class ProfileComponent implements OnInit {
 
   profileSaving = signal(false);
   passwordSaving = signal(false);
+  readonly roleLabel = computed(() => this.formatRole(this.auth.currentUser()?.role ?? ''));
 
   profileForm = this.fb.group({
     firstName: ['', Validators.required],
@@ -184,7 +190,15 @@ export class ProfileComponent implements OnInit {
     if (this.profileForm.invalid) return;
     this.profileSaving.set(true);
     this.api.patch('/auth/me', this.profileForm.value).subscribe({
-      next:  () => { this.notify.success('Profile updated.'); this.profileSaving.set(false); },
+      next:  () => {
+        this.auth.loadProfile().subscribe({
+          next: () => {
+            this.notify.success('Profile updated.');
+            this.profileSaving.set(false);
+          },
+          error: () => this.profileSaving.set(false),
+        });
+      },
       error: () => this.profileSaving.set(false),
     });
   }
@@ -197,5 +211,14 @@ export class ProfileComponent implements OnInit {
       next:  () => this.passwordSaving.set(false),
       error: () => this.passwordSaving.set(false),
     });
+  }
+
+  private formatRole(role: string): string {
+    return role
+      .replace(/^ROLE_/, '')
+      .split('_')
+      .filter(Boolean)
+      .map(part => part.charAt(0) + part.slice(1).toLowerCase())
+      .join(' ');
   }
 }

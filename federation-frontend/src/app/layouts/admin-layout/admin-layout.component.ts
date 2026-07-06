@@ -50,7 +50,7 @@ import { AuthService }         from '@core/services/auth.service';
 
         <!-- Top bar -->
         <header class="flex items-center justify-between h-16 px-4 lg:px-6
-                        bg-white border-b border-surface-200 flex-shrink-0 z-30">
+            bg-white dark:bg-surface-100 border-b border-surface-200 flex-shrink-0 z-30">
 
           <!-- Left: mobile menu toggle + page title signal -->
           <div class="flex items-center gap-3">

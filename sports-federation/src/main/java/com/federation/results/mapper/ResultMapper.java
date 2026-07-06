@@ -14,6 +14,7 @@ public interface ResultMapper {
     @Mapping(target = "eventName",       source = "event.name")
     @Mapping(target = "discipline",      source = "event.discipline")
     @Mapping(target = "athleteId",       source = "athlete.id")
+    @Mapping(target = "athleteUserId",   expression = "java(r.getAthlete().getUser() != null ? r.getAthlete().getUser().getId() : null)")
     @Mapping(target = "athleteName",     expression = "java(r.getAthlete().getFullName())")
     @Mapping(target = "licenseNumber",   source = "athlete.licenseNumber")
     @Mapping(target = "gender",          source = "athlete.gender")

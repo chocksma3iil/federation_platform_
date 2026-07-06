@@ -26,7 +26,7 @@ interface NavLink {
     InitialsPipe,
   ],
   template: `
-    <header class="sticky top-0 z-50 bg-white/95 backdrop-blur-sm shadow-navbar">
+    <header class="sticky top-0 z-50 bg-white/95 dark:bg-surface-50/95 backdrop-blur-sm shadow-navbar border-b border-surface-200 dark:border-surface-200">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16">
 

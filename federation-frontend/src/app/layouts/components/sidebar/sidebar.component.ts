@@ -120,7 +120,7 @@ export class SidebarComponent {
   readonly auth = inject(AuthService);
 
   get sidebarClass(): string {
-    const base = 'flex flex-col bg-white border-r border-surface-200 transition-all duration-250 z-50';
+    const base = 'flex flex-col bg-white dark:bg-surface-100 border-r border-surface-200 transition-all duration-250 z-50';
     const width = this.collapsed ? 'w-sidebar-collapsed' : 'w-sidebar';
     const position = this.isMobile
       ? `fixed inset-y-0 left-0 ${this.open ? 'translate-x-0' : '-translate-x-full'} shadow-xl`

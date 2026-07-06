@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.*;
  * Authenticated endpoints:
  *   POST   /auth/logout
  *   GET    /auth/me
+ *   PATCH  /auth/me
  *   PATCH  /auth/change-password
  */
 @Tag(name = "Authentication", description = "Registration, login, token management and profile")
@@ -146,6 +147,30 @@ public class AuthController {
 
         UserProfileResponse profile = authService.getProfile(principal.getId());
         return ResponseEntity.ok(ApiResponse.ok(profile));
+    }
+
+    // ----------------------------------------------------------------
+    // PATCH /auth/me
+    // ----------------------------------------------------------------
+
+    @Operation(
+        summary  = "Update my profile",
+        description = "Updates editable fields of the authenticated user's profile.",
+        security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Profile updated"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Validation error"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Not authenticated")
+    })
+    @PatchMapping("/me")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<UserProfileResponse>> updateMe(
+            @AuthenticationPrincipal FederationUserDetails principal,
+            @Valid @RequestBody UpdateProfileRequest request) {
+
+        UserProfileResponse profile = authService.updateProfile(principal.getId(), request);
+        return ResponseEntity.ok(ApiResponse.ok(profile, "Profile updated."));
     }
 
     // ----------------------------------------------------------------

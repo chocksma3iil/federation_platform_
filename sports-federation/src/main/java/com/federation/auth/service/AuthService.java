@@ -217,6 +217,21 @@ public class AuthService {
         return authMapper.toProfileResponse(user);
     }
 
+    @Transactional
+    public UserProfileResponse updateProfile(UUID userId, UpdateProfileRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+
+        user.setFirstName(request.getFirstName().trim());
+        user.setLastName(request.getLastName().trim());
+        user.setPhone(normalizeOptional(request.getPhone()));
+        user.setAvatarUrl(normalizeOptional(request.getAvatarUrl()));
+
+        User saved = userRepository.save(user);
+        log.info("Profile updated for userId={}", userId);
+        return authMapper.toProfileResponse(saved);
+    }
+
     // ----------------------------------------------------------------
     // Helper used by the controller to resolve principal UUID
     // ----------------------------------------------------------------
@@ -270,5 +285,13 @@ public class AuthService {
             throw new ResourceAlreadyExistsException(
                     "Username '" + username + "' is already taken.");
         }
+    }
+
+    private String normalizeOptional(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

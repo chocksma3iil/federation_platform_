@@ -116,9 +116,12 @@ cd C:\Users\ichock\Desktop\pi\federation-platform\federation-frontend
 #### Set Node Path & Install Dependencies
 
 ```powershell
-$env:Path = "C:\Users\ichock\Downloads\node-v24.15.0-win-x64\node-v24.15.0-win-x64\bin;" + $env:Path
+$env:Path = "C:\Users\ichock\Downloads\node-v24.15.0-win-x64\node-v24.15.0-win-x64;" + $env:Path
 & "C:\Users\ichock\Downloads\node-v24.15.0-win-x64\node-v24.15.0-win-x64\npm.cmd" install
 ```
+
+Note: this downloaded Node archive contains `node.exe` and `npm.cmd` directly inside
+`node-v24.15.0-win-x64\node-v24.15.0-win-x64`, not inside a `bin` folder.
 
 Expected: `up to date, audited 988 packages`
 
@@ -154,9 +157,9 @@ java -jar "target\sports-federation-1.0.0-SNAPSHOT.jar"
 ### Terminal 2: Frontend
 
 ```powershell
-$env:Path = "C:\Users\ichock\Downloads\node-v24.15.0-win-x64\node-v24.15.0-win-x64\bin;" + $env:Path
+$env:Path = "C:\Users\ichock\Downloads\node-v24.15.0-win-x64\node-v24.15.0-win-x64;" + $env:Path
 cd C:\Users\ichock\Desktop\pi\federation-platform\federation-frontend
-& "npm.cmd" start
+& "C:\Users\ichock\Downloads\node-v24.15.0-win-x64\node-v24.15.0-win-x64\npm.cmd" start
 ```
 
 ### Terminal 3: Git Updates (Optional)
@@ -611,18 +614,18 @@ All endpoints return:
 
 ```powershell
 # Check if node exists
-Get-Item C:\Users\ichock\Downloads\node-v24.15.0-win-x64\bin\npm.cmd
+Get-Item C:\Users\ichock\Downloads\node-v24.15.0-win-x64\node-v24.15.0-win-x64\npm.cmd
 
 # If found, set PATH before running npm
-$node = "C:\Users\ichock\Downloads\node-v24.15.0-win-x64"
-$env:Path = "$node\bin;$env:Path"
+$node = "C:\Users\ichock\Downloads\node-v24.15.0-win-x64\node-v24.15.0-win-x64"
+$env:Path = "$node;$env:Path"
 npm --version
 ```
 
 **Solution — Command Prompt (cmd):**
 
 ```cmd
-path C:\Users\ichock\Downloads\node-v24.15.0-win-x64\bin;%PATH%
+path C:\Users\ichock\Downloads\node-v24.15.0-win-x64\node-v24.15.0-win-x64;%PATH%
 npm --version
 ```
 
@@ -914,8 +917,8 @@ $mvn = "C:\Users\ichock\Downloads\apache-maven-3.9.16-bin\apache-maven-3.9.16\bi
 ### Build frontend for deployment
 
 ```powershell
-$node = "C:\Users\ichock\Downloads\node-v24.15.0-win-x64"
-$env:Path = "$node\bin;$env:Path"
+$node = "C:\Users\ichock\Downloads\node-v24.15.0-win-x64\node-v24.15.0-win-x64"
+$env:Path = "$node;$env:Path"
 cd federation-frontend
 npm run build   # Output: dist/
 ```

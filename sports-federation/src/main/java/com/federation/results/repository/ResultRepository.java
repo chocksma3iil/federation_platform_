@@ -15,6 +15,10 @@ import java.util.UUID;
 @Repository
 public interface ResultRepository extends JpaRepository<Result, UUID>, JpaSpecificationExecutor<Result> {
 
+        boolean existsByAthleteIdAndEventIdAndRound(UUID athleteId, UUID eventId, String round);
+
+        boolean existsByAthleteIdAndEventIdAndRoundAndIdNot(UUID athleteId, UUID eventId, String round, UUID id);
+
     List<Result> findByCompetitionIdAndEventIdAndRound(
             UUID competitionId, UUID eventId, String round);
 

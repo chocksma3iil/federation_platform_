@@ -101,6 +101,7 @@ public class SecurityConfig {
                     // Public read for catalogues
                     .requestMatchers(HttpMethod.GET, "/clubs/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/competitions/**").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/competition-events/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/news/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/results/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/users/**").permitAll()

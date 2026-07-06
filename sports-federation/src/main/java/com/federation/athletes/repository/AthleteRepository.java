@@ -12,11 +12,13 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
+import java.util.List;
 import java.util.UUID;
 @Repository
 public interface AthleteRepository extends JpaRepository<Athlete, UUID> {
 
     Optional<Athlete> findByLicenseNumber(String licenseNumber);
+    List<Athlete> findAllByUserIdOrderByCreatedAtDesc(UUID userId);
     boolean existsByLicenseNumber(String licenseNumber);
     long countByClubIdAndStatus(UUID clubId, AthleteStatus status);
 }

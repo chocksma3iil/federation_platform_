@@ -16,6 +16,7 @@ public class ResultResponse {
     private String       eventName;
     private String       discipline;
     private UUID         athleteId;
+    private UUID         athleteUserId;
     private String       athleteName;
     private String       licenseNumber;
     private Gender       gender;

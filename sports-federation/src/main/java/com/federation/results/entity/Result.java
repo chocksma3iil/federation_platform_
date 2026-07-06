@@ -7,6 +7,7 @@ import com.federation.competitions.entity.CompetitionEvent;
 import com.federation.users.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.ColumnTransformer;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -54,6 +55,7 @@ public class Result extends BaseEntity {
     private Integer points;
 
     @Column(nullable = false, length = 20, columnDefinition = "result_status")
+    @ColumnTransformer(write = "?::result_status")
     @Builder.Default
     private String status = "UNOFFICIAL";
 
