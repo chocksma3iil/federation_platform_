@@ -6,6 +6,7 @@ import com.federation.common.response.ApiResponse;
 import com.federation.common.response.PagedResponse;
 import com.federation.athletes.entity.Athlete;
 import com.federation.athletes.repository.AthleteRepository;
+import com.federation.athletes.service.AthleteProfileProvisioningService;
 import com.federation.users.entity.User;
 import com.federation.users.entity.UserRole;
 import com.federation.users.entity.UserStatus;
@@ -51,6 +52,7 @@ public class UserController {
 
     private final UserRepository userRepository;
     private final AthleteRepository athleteRepository;
+    private final AthleteProfileProvisioningService athleteProfileProvisioningService;
     private final PasswordEncoder passwordEncoder;
 
     @Operation(summary = "List users")
@@ -100,6 +102,8 @@ public class UserController {
     @Transactional(readOnly = true)
     public ResponseEntity<ApiResponse<List<AthleteUserResponse>>> listAthleteUsers(
             @RequestParam(required = false) UUID clubId) {
+        athleteProfileProvisioningService.ensureProfilesForAllAthleteUsers();
+
         List<Athlete> athletes = (clubId == null)
             ? athleteRepository.findAllWithUserAndClub()
             : athleteRepository.findAllByClubIdWithUserAndClub(clubId);
@@ -153,6 +157,10 @@ public class UserController {
                 .role(request.getRole())
                 .status(request.getStatus() != null ? request.getStatus() : UserStatus.ACTIVE)
                 .build());
+
+        if (created.getRole() == UserRole.ROLE_ATHLETE) {
+            athleteProfileProvisioningService.ensureAthleteProfile(created);
+        }
 
         return ResponseEntity.status(201).body(ApiResponse.created(toResponse(created)));
     }

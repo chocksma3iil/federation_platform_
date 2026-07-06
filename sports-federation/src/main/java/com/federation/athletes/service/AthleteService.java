@@ -41,6 +41,7 @@ public class AthleteService {
     private final ClubRepository    clubRepository;
     private final UserRepository    userRepository;
     private final AthleteMapper     athleteMapper;
+    private final AthleteProfileProvisioningService athleteProfileProvisioningService;
 
     // ── Read ──────────────────────────────────────────────────────────────
 
@@ -138,8 +139,7 @@ public class AthleteService {
     @Transactional
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_FEDERATION_STAFF','ROLE_CLUB_MANAGER')")
     public AthleteResponse assignClubByUserId(UUID userId, AthleteClubAssignmentRequest request) {
-        Athlete athlete = athleteRepository.findFirstByUserIdOrderByCreatedAtDesc(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Athlete", "userId", userId));
+        Athlete athlete = athleteProfileProvisioningService.ensureAthleteProfile(userId);
         Club club = clubRepository.findById(request.getClubId())
                 .orElseThrow(() -> new ResourceNotFoundException("Club", "id", request.getClubId()));
         athlete.setClub(club);

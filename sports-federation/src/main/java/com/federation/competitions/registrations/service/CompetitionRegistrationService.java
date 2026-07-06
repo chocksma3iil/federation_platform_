@@ -2,6 +2,7 @@ package com.federation.competitions.registrations.service;
 
 import com.federation.athletes.entity.Athlete;
 import com.federation.athletes.repository.AthleteRepository;
+import com.federation.athletes.service.AthleteProfileProvisioningService;
 import com.federation.common.exception.BadRequestException;
 import com.federation.common.exception.BusinessRuleViolationException;
 import com.federation.common.exception.ResourceNotFoundException;
@@ -41,6 +42,7 @@ public class CompetitionRegistrationService {
     private final CompetitionEventRepository eventRepository;
     private final AthleteRepository athleteRepository;
     private final UserRepository userRepository;
+    private final AthleteProfileProvisioningService athleteProfileProvisioningService;
 
     @Transactional
     public CompetitionRegistrationResponse createForCurrentAthlete(UUID currentUserId, CompetitionRegistrationRequest request) {
@@ -191,11 +193,7 @@ public class CompetitionRegistrationService {
     }
 
     private Athlete resolveAthleteByUserId(UUID userId) {
-        List<Athlete> athletes = athleteRepository.findAllByUserIdOrderByCreatedAtDesc(userId);
-        if (athletes.isEmpty()) {
-            throw new ResourceNotFoundException("Athlete profile not found for current user");
-        }
-        return athletes.get(0);
+        return athleteProfileProvisioningService.ensureAthleteProfile(userId);
     }
 
     private Athlete resolveAthleteForAdminRequest(CompetitionRegistrationAdminRequest request) {

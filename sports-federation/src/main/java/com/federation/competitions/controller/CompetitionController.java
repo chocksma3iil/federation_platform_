@@ -47,7 +47,7 @@ public class CompetitionController {
     }
 
     @Operation(summary = "Get competition by ID")
-    @GetMapping("/{id}")
+    @GetMapping("/{id:[0-9a-fA-F-]{36}}")
     public ResponseEntity<ApiResponse<CompetitionResponse>> findById(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.ok(competitionService.findById(id)));
     }
@@ -67,7 +67,7 @@ public class CompetitionController {
     }
 
     @Operation(summary = "Update a competition")
-    @PutMapping("/{id}")
+    @PutMapping("/{id:[0-9a-fA-F-]{36}}")
     public ResponseEntity<ApiResponse<CompetitionResponse>> update(
             @PathVariable UUID id,
             @Valid @RequestBody CompetitionRequest request) {
@@ -75,7 +75,7 @@ public class CompetitionController {
     }
 
     @Operation(summary = "Delete a competition")
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{id:[0-9a-fA-F-]{36}}")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable UUID id) {
         competitionService.delete(id);
         return ResponseEntity.ok(ApiResponse.noContent());

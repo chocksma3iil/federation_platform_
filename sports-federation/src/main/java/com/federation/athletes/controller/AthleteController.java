@@ -50,7 +50,7 @@ public class AthleteController {
     }
 
     @Operation(summary = "Get athlete by ID")
-    @GetMapping("/{id}")
+    @GetMapping("/{id:[0-9a-fA-F-]{36}}")
     public ResponseEntity<ApiResponse<AthleteResponse>> findById(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.ok(athleteService.findById(id)));
     }
@@ -64,7 +64,7 @@ public class AthleteController {
     }
 
     @Operation(summary = "Update an athlete")
-    @PutMapping("/{id}")
+    @PutMapping("/{id:[0-9a-fA-F-]{36}}")
     public ResponseEntity<ApiResponse<AthleteResponse>> update(
             @PathVariable UUID id,
             @Valid @RequestBody AthleteRequest request) {
@@ -72,14 +72,14 @@ public class AthleteController {
     }
 
     @Operation(summary = "Delete an athlete")
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{id:[0-9a-fA-F-]{36}}")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable UUID id) {
         athleteService.delete(id);
         return ResponseEntity.ok(ApiResponse.noContent());
     }
 
     @Operation(summary = "Assign athlete to a club")
-    @PatchMapping("/{id}/club")
+    @PatchMapping("/{id:[0-9a-fA-F-]{36}}/club")
     public ResponseEntity<ApiResponse<AthleteResponse>> assignClub(
             @PathVariable UUID id,
             @Valid @RequestBody AthleteClubAssignmentRequest request) {
@@ -87,7 +87,7 @@ public class AthleteController {
     }
 
     @Operation(summary = "Assign athlete to a club (POST compatibility)")
-    @PostMapping("/{id}/club")
+    @PostMapping("/{id:[0-9a-fA-F-]{36}}/club")
     public ResponseEntity<ApiResponse<AthleteResponse>> assignClubPostCompat(
             @PathVariable UUID id,
             @Valid @RequestBody AthleteClubAssignmentRequest request) {

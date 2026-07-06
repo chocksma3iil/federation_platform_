@@ -47,7 +47,7 @@ public class NewsController {
     }
 
     @Operation(summary = "Get article by ID")
-    @GetMapping("/{id}")
+    @GetMapping("/{id:[0-9a-fA-F-]{36}}")
     public ResponseEntity<ApiResponse<NewsResponse>> findById(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.ok(newsService.findById(id)));
     }
@@ -73,7 +73,7 @@ public class NewsController {
     }
 
     @Operation(summary = "Update a news article")
-    @PutMapping("/{id}")
+    @PutMapping("/{id:[0-9a-fA-F-]{36}}")
     public ResponseEntity<ApiResponse<NewsResponse>> update(
             @PathVariable UUID id,
             @Valid @RequestBody NewsRequest request) {
@@ -87,7 +87,7 @@ public class NewsController {
     }
 
     @Operation(summary = "Delete a news article")
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{id:[0-9a-fA-F-]{36}}")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable UUID id) {
         newsService.delete(id);
         return ResponseEntity.ok(ApiResponse.noContent());

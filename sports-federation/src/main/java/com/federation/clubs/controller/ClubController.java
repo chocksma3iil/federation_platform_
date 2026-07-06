@@ -45,7 +45,7 @@ public class ClubController {
     }
 
     @Operation(summary = "Get a club by ID")
-    @GetMapping("/{id}")
+    @GetMapping("/{id:[0-9a-fA-F-]{36}}")
     public ResponseEntity<ApiResponse<ClubResponse>> findById(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.ok(clubService.findById(id)));
     }
@@ -64,7 +64,7 @@ public class ClubController {
     }
 
     @Operation(summary = "Update a club")
-    @PutMapping("/{id}")
+    @PutMapping("/{id:[0-9a-fA-F-]{36}}")
     public ResponseEntity<ApiResponse<ClubResponse>> update(
             @PathVariable UUID id,
             @Valid @RequestBody ClubRequest request) {
@@ -72,7 +72,7 @@ public class ClubController {
     }
 
     @Operation(summary = "Delete a club")
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{id:[0-9a-fA-F-]{36}}")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable UUID id) {
         clubService.delete(id);
         return ResponseEntity.ok(ApiResponse.noContent());

@@ -67,7 +67,7 @@ public class CompetitionEventController {
     }
 
     @Operation(summary = "Update a competition event")
-    @PutMapping("/{id}")
+    @PutMapping("/{id:[0-9a-fA-F-]{36}}")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_FEDERATION_STAFF')")
     public ResponseEntity<ApiResponse<EventItem>> update(@PathVariable UUID id,
                                                           @Valid @RequestBody EventRequest request) {
@@ -92,7 +92,7 @@ public class CompetitionEventController {
     }
 
     @Operation(summary = "Delete a competition event")
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{id:[0-9a-fA-F-]{36}}")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_FEDERATION_STAFF')")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable UUID id) {
         if (!eventRepository.existsById(id)) {

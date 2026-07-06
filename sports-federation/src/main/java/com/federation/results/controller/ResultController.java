@@ -56,7 +56,7 @@ public class ResultController {
     }
 
     @Operation(summary = "Get a single result by ID")
-    @GetMapping("/{id}")
+    @GetMapping("/{id:[0-9a-fA-F-]{36}}")
     public ResponseEntity<ApiResponse<ResultResponse>> findById(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.ok(resultService.findById(id)));
     }
@@ -70,7 +70,7 @@ public class ResultController {
     }
 
     @Operation(summary = "Update a result")
-    @PutMapping("/{id}")
+    @PutMapping("/{id:[0-9a-fA-F-]{36}}")
     public ResponseEntity<ApiResponse<ResultResponse>> update(
             @PathVariable UUID id,
             @Valid @RequestBody ResultRequest request) {
@@ -78,7 +78,7 @@ public class ResultController {
     }
 
     @Operation(summary = "Delete a result")
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{id:[0-9a-fA-F-]{36}}")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable UUID id) {
         resultService.delete(id);
         return ResponseEntity.ok(ApiResponse.noContent());

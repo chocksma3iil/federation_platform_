@@ -12,6 +12,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -43,6 +44,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     // ----------------------------------------------------------------
 
     Page<User> findByRole(UserRole role, Pageable pageable);
+
+  List<User> findAllByRole(UserRole role);
 
     Page<User> findByStatus(UserStatus status, Pageable pageable);
 
