@@ -4,6 +4,8 @@ import com.federation.common.exception.ResourceNotFoundException;
 import com.federation.common.exception.ResourceAlreadyExistsException;
 import com.federation.common.response.ApiResponse;
 import com.federation.common.response.PagedResponse;
+import com.federation.athletes.entity.Athlete;
+import com.federation.athletes.repository.AthleteRepository;
 import com.federation.users.entity.User;
 import com.federation.users.entity.UserRole;
 import com.federation.users.entity.UserStatus;
@@ -30,6 +32,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.transaction.annotation.Transactional;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -47,6 +50,7 @@ import java.util.UUID;
 public class UserController {
 
     private final UserRepository userRepository;
+    private final AthleteRepository athleteRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Operation(summary = "List users")
@@ -82,12 +86,47 @@ public class UserController {
     }
 
     @Operation(summary = "Get user by ID")
-    @GetMapping("/{id}")
+    @GetMapping("/{id:[0-9a-fA-F-]{36}}")
     @PreAuthorize("permitAll()")
     public ResponseEntity<ApiResponse<UserResponse>> findById(@PathVariable UUID id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
         return ResponseEntity.ok(ApiResponse.ok(toResponse(user)));
+    }
+
+    @Operation(summary = "List athlete users, optionally filtered by club")
+    @GetMapping("/athletes")
+    @PreAuthorize("isAuthenticated()")
+    @Transactional(readOnly = true)
+    public ResponseEntity<ApiResponse<List<AthleteUserResponse>>> listAthleteUsers(
+            @RequestParam(required = false) UUID clubId) {
+        List<Athlete> athletes = (clubId == null)
+            ? athleteRepository.findAllWithUserAndClub()
+            : athleteRepository.findAllByClubIdWithUserAndClub(clubId);
+
+        List<AthleteUserResponse> mapped = athletes.stream()
+            .filter(a -> a.getUser() != null && a.getUser().getRole() == UserRole.ROLE_ATHLETE)
+            .map(a -> AthleteUserResponse.builder()
+                .userId(a.getUser().getId())
+                .athleteId(a.getId())
+                .clubId(a.getClub() != null ? a.getClub().getId() : null)
+                .firstName(a.getUser().getFirstName())
+                .lastName(a.getUser().getLastName())
+                .fullName(a.getUser().getFullName())
+                .email(a.getUser().getEmail())
+                .licenseNumber(a.getLicenseNumber())
+                .build())
+            .toList();
+
+        return ResponseEntity.ok(ApiResponse.ok(mapped));
+    }
+
+    @Operation(summary = "List athlete users (compat alias)")
+    @GetMapping("/athlete-users")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<List<AthleteUserResponse>>> listAthleteUsersAlias(
+            @RequestParam(required = false) UUID clubId) {
+        return listAthleteUsers(clubId);
     }
 
     @Operation(summary = "Create a user")
@@ -234,5 +273,18 @@ public class UserController {
 
         UserStatus status;
         String phone;
+    }
+
+    @Value
+    @Builder
+    private static class AthleteUserResponse {
+        UUID userId;
+        UUID athleteId;
+        UUID clubId;
+        String firstName;
+        String lastName;
+        String fullName;
+        String email;
+        String licenseNumber;
     }
 }

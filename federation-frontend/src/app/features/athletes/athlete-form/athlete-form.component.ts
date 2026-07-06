@@ -14,6 +14,8 @@ import { NotificationService } from '@core/services/notification.service';
 import { PageHeaderComponent } from '@shared/components/page-header/page-header.component';
 import { LoadingSpinnerComponent } from '@shared/components/loading-spinner/loading-spinner.component';
 
+interface SelectItem { id: string; label: string; }
+
 @Component({
   selector:   'app-athlete-form',
   standalone: true,
@@ -99,6 +101,31 @@ import { LoadingSpinnerComponent } from '@shared/components/loading-spinner/load
           </div>
 
           <h3 class="font-semibold text-surface-800 border-b border-surface-100 pb-3 pt-2">
+            Assignment
+          </h3>
+
+          <div class="grid grid-cols-2 gap-4">
+            <mat-form-field appearance="outline">
+              <mat-label>Linked User (ROLE_ATHLETE)</mat-label>
+              <mat-select formControlName="userId">
+                <mat-option [value]="null">— None —</mat-option>
+                @for (u of users(); track u.id) {
+                  <mat-option [value]="u.id">{{ u.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Club</mat-label>
+              <mat-select formControlName="clubId">
+                <mat-option [value]="null">— None —</mat-option>
+                @for (c of clubs(); track c.id) {
+                  <mat-option [value]="c.id">{{ c.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <h3 class="font-semibold text-surface-800 border-b border-surface-100 pb-3 pt-2">
             Physical & Contact
           </h3>
 
@@ -158,6 +185,9 @@ export class AthleteFormComponent implements OnInit {
   isEdit      = false;
   athleteId?: string;
 
+  users = signal<SelectItem[]>([]);
+  clubs = signal<SelectItem[]>([]);
+
   form = this.fb.group({
     licenseNumber: ['', Validators.required],
     firstName:   ['', Validators.required],
@@ -171,6 +201,8 @@ export class AthleteFormComponent implements OnInit {
     email:       [''],
     phone:       [''],
     status:      ['ACTIVE'],
+    userId:      [null as string | null],
+    clubId:      [null as string | null],
   });
 
   get f() { return this.form.controls; }
@@ -178,6 +210,9 @@ export class AthleteFormComponent implements OnInit {
   ngOnInit(): void {
     this.athleteId = this.route.snapshot.paramMap.get('id') ?? undefined;
     this.isEdit    = !!this.athleteId;
+
+    this.loadUsers();
+    this.loadClubs();
 
     if (this.isEdit) {
       this.initLoading.set(true);
@@ -202,6 +237,18 @@ export class AthleteFormComponent implements OnInit {
         this.router.navigate(['/admin/athletes']);
       },
       error: () => this.saving.set(false),
+    });
+  }
+
+  private loadUsers(): void {
+    this.api.getPaged<any>('/users', { page: 0, size: 500, role: 'ROLE_ATHLETE' }).subscribe({
+      next: p => this.users.set(p.content.map((u: any) => ({ id: u.id, label: `${u.firstName} ${u.lastName} (${u.email})` }))),
+    });
+  }
+
+  private loadClubs(): void {
+    this.api.getPaged<any>('/clubs', { page: 0, size: 500 }).subscribe({
+      next: p => this.clubs.set(p.content.map((c: any) => ({ id: c.id, label: c.name }))),
     });
   }
 }

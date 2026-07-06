@@ -46,6 +46,8 @@ public class AthleteRequest {
 
     private UUID clubId;
 
+    private UUID userId;
+
     @Email @Size(max = 255)
     private String email;
 

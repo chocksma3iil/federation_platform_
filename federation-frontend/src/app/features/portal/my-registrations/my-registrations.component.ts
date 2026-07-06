@@ -41,8 +41,8 @@ interface MyRegistrationItem {
       title="My Registrations"
       subtitle="Track your competition registrations"
       [breadcrumbs]="[{ label: 'Portal' }, { label: 'My Registrations' }]">
-      <a mat-flat-button color="primary" routerLink="/competitions" actions>
-        <mat-icon>search</mat-icon> Browse Competitions
+      <a mat-flat-button color="primary" routerLink="/portal/register" actions>
+        <mat-icon>how_to_reg</mat-icon> Register for Competition
       </a>
     </app-page-header>
 
@@ -128,6 +128,11 @@ export class MyRegistrationsComponent implements OnInit {
   }
 
   confirmCancel(r: MyRegistrationItem): void {
+    if (!r.id || !this.isUuid(r.id)) {
+      this.notify.error('Invalid registration id. Please refresh and try again.');
+      return;
+    }
+
     const ref = this.dialog.open(ConfirmDialogComponent, {
       data: {
         title: 'Cancel Registration',
@@ -150,6 +155,10 @@ export class MyRegistrationsComponent implements OnInit {
         },
       });
     });
+  }
+
+  private isUuid(value: string): boolean {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
   }
 
   private loadMyRegistrations(): void {

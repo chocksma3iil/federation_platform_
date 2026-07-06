@@ -19,6 +19,28 @@ public interface AthleteRepository extends JpaRepository<Athlete, UUID> {
 
     Optional<Athlete> findByLicenseNumber(String licenseNumber);
     List<Athlete> findAllByUserIdOrderByCreatedAtDesc(UUID userId);
+    Optional<Athlete> findFirstByUserIdOrderByCreatedAtDesc(UUID userId);
+    List<Athlete> findAllByClubIdOrderByLastNameAsc(UUID clubId);
+
+        @Query("""
+            select distinct a
+            from Athlete a
+            left join fetch a.user u
+            left join fetch a.club c
+            order by a.lastName asc, a.firstName asc
+            """)
+        List<Athlete> findAllWithUserAndClub();
+
+        @Query("""
+            select distinct a
+            from Athlete a
+            left join fetch a.user u
+            left join fetch a.club c
+            where c.id = :clubId
+            order by a.lastName asc, a.firstName asc
+            """)
+        List<Athlete> findAllByClubIdWithUserAndClub(@Param("clubId") UUID clubId);
+
     boolean existsByLicenseNumber(String licenseNumber);
     long countByClubIdAndStatus(UUID clubId, AthleteStatus status);
 }

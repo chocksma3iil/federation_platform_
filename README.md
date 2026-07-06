@@ -1,43 +1,55 @@
 ﻿# Sports Federation Platform
 
-Full-stack sports federation management platform with a Spring Boot backend and an Angular frontend.
+Sports Federation Platform is a full-stack web application for managing a national sports federation.
+It includes:
+- Spring Boot backend API
+- Angular frontend
+- PostgreSQL database
 
-## Overview
+## What the project does
 
-This project manages the federation workflow end to end:
-- Authentication and role-based access
+Main capabilities:
+- JWT authentication and role-based access
+- User and profile management
 - Athletes and clubs management
-- Competitions, registrations, and event lifecycle
-- Results publishing and athlete portal
-- News publishing
+- Competitions, event registrations, and statuses
+- Results publishing and athlete portal views
+- News module
 
 ## Tech Stack
 
-- Backend: Java 21, Spring Boot 3.2, Spring Security, Spring Data JPA, Flyway, PostgreSQL
-- Frontend: Angular 19, TypeScript, Angular Material, Tailwind
-- Build tools: Maven, npm
+Backend:
+- Java 21
+- Spring Boot 3.2.x
+- Spring Security
+- Spring Data JPA + Hibernate
+- Flyway
+- PostgreSQL
 
-## Architecture
+Frontend:
+- Angular 19
+- TypeScript
+- Angular Material
+- Tailwind CSS
+
+## Local URLs
 
 - Frontend: http://localhost:4200
-- Backend API: http://localhost:8081/api
-- Frontend calls /api and is proxied to backend through federation-frontend/proxy.conf.json
+- Backend API base: http://localhost:8081/api
+- Swagger UI: http://localhost:8081/api/swagger-ui.html
+- Health: http://localhost:8081/api/actuator/health
 
-## Prerequisites
+## Verified local tool paths on your machine
 
-Install these once on Windows:
-- Java 21+
-- Maven 3.9+
-- Node.js 22+
-- PostgreSQL 16+ or 17+
-- Git
+These are the paths available in your environment:
+- Java: C:\Program Files\Eclipse Adoptium\jdk-21.0.11.10-hotspot\bin\java.exe
+- Maven: C:\Users\ichock\Downloads\apache-maven-3.9.16-bin\apache-maven-3.9.16\bin\mvn.cmd
+- Node/npm: C:\Users\ichock\Downloads\node-v24.15.0-win-x64\node-v24.15.0-win-x64\npm.cmd
+- PostgreSQL psql: C:\Program Files\PostgreSQL\17\bin\psql.exe
 
-## Project Structure
+## First-time setup
 
-- sports-federation: Spring Boot backend
-- federation-frontend: Angular frontend
-
-## First-Time Setup
+Run from project root.
 
 ### 1) Create database
 
@@ -48,126 +60,77 @@ set PGPASSWORD=azerty990
 "C:\Program Files\PostgreSQL\17\bin\psql.exe" -U postgres -c "CREATE DATABASE federation_db;"
 ```
 
-PowerShell:
-
-```powershell
-$env:PGPASSWORD = "azerty990"
-& "C:\Program Files\PostgreSQL\17\bin\psql.exe" -U postgres -c "CREATE DATABASE federation_db;"
-```
-
 ### 2) Install frontend dependencies
 
 Command Prompt (cmd):
 
 ```cmd
 cd federation-frontend
-npm install
+"C:\Users\ichock\Downloads\node-v24.15.0-win-x64\node-v24.15.0-win-x64\npm.cmd" install
 cd ..
 ```
 
-PowerShell:
+## Run the project
 
-```powershell
-Set-Location federation-frontend
-npm install
-Set-Location ..
-```
+Use two terminals.
 
-## Run the Project
-
-Run backend and frontend in separate terminals.
-
-### Terminal 1: Start backend
+### Terminal 1 - Backend
 
 Command Prompt (cmd):
 
 ```cmd
 cd sports-federation
-mvn -DskipTests spring-boot:run "-Dspring-boot.run.jvmArguments=-Dserver.port=8081"
+"C:\Users\ichock\Downloads\apache-maven-3.9.16-bin\apache-maven-3.9.16\bin\mvn.cmd" -DskipTests spring-boot:run "-Dspring-boot.run.jvmArguments=-Dserver.port=8081"
 ```
 
-PowerShell:
-
-```powershell
-Set-Location sports-federation
-mvn -DskipTests spring-boot:run "-Dspring-boot.run.jvmArguments=-Dserver.port=8081"
-```
-
-Expected log contains:
+Wait for backend ready logs:
 - Tomcat started on port(s): 8081
 - context path '/api'
 
-### Terminal 2: Start frontend
+### Terminal 2 - Frontend
 
 Command Prompt (cmd):
 
 ```cmd
 cd federation-frontend
-npm start
+"C:\Users\ichock\Downloads\node-v24.15.0-win-x64\node-v24.15.0-win-x64\npm.cmd" start
 ```
 
-PowerShell:
-
-```powershell
-Set-Location federation-frontend
-npm start
-```
-
-Expected log contains:
+Wait for:
 - Local: http://localhost:4200/
 
-## Login
+## Default login accounts
 
-Open http://localhost:4200 and use:
+- admin@federation.local / Admin@1234 (Admin)
+- staff@federation.local / Test@1234 (Federation Staff)
+- manager.esperance@federation.local / Test@1234 (Club Manager)
+- athlete.ferjani@federation.local / Test@1234 (Athlete)
 
-- Email: admin@federation.local
-- Password: Admin@1234
+## Useful checks
 
-Other seeded users:
-- staff@federation.local / Test@1234
-- manager.esperance@federation.local / Test@1234
-- athlete.ferjani@federation.local / Test@1234
+Command Prompt (cmd):
 
-## API and Health URLs
+```cmd
+"C:\Program Files\Eclipse Adoptium\jdk-21.0.11.10-hotspot\bin\java.exe" -version
+"C:\Users\ichock\Downloads\apache-maven-3.9.16-bin\apache-maven-3.9.16\bin\mvn.cmd" -version
+"C:\Users\ichock\Downloads\node-v24.15.0-win-x64\node-v24.15.0-win-x64\npm.cmd" --version
+```
 
-- Swagger UI: http://localhost:8081/api/swagger-ui.html
-- OpenAPI docs: http://localhost:8081/api/v3/api-docs
-- Health check: http://localhost:8081/api/actuator/health
+## Troubleshooting
 
-## Environment Configuration
-
-Backend config file:
-- sports-federation/src/main/resources/application.yml
-
-Key defaults:
-- Database URL: jdbc:postgresql://localhost:5432/federation_db
-- Database user: postgres
-- Database password: azerty990
-- Server port: 8081
-- Context path: /api
-
-Frontend config files:
-- federation-frontend/proxy.conf.json
-- federation-frontend/src/environments/environment.ts
-
-Notes:
-- Frontend API base URL is /api and is proxied to backend localhost:8081 in development.
-
-## Common Troubleshooting
-
-### Backend cannot connect to DB
+### Backend cannot connect to database
 
 - Confirm PostgreSQL service is running.
 - Confirm federation_db exists.
-- Confirm credentials in application.yml match your PostgreSQL setup.
+- Confirm backend datasource points to localhost:5432, user postgres, password azerty990.
 
-### Frontend cannot reach backend
+### Frontend cannot call backend
 
 - Confirm backend is running on 8081.
-- Confirm proxy target in federation-frontend/proxy.conf.json is http://localhost:8081.
-- Restart npm start after proxy changes.
+- Confirm federation-frontend/proxy.conf.json points /api to http://localhost:8081.
+- Restart frontend terminal after changes.
 
-### Port already in use
+### Port conflict (8081 or 4200)
 
 PowerShell:
 
@@ -177,23 +140,9 @@ netstat -ano | findstr :4200
 Stop-Process -Id <PID> -Force
 ```
 
-### Maven or npm not found
+## Stop services
 
-- Ensure Java, Maven, and Node.js are installed and available in PATH.
-- Open a new terminal and verify:
-
-```cmd
-java -version
-mvn -version
-node -v
-npm -v
-```
-
-## Development Notes
-
-- Backend hot reload is not guaranteed for all changes; restart backend if needed.
-- Frontend supports live reload during npm start.
-- Flyway migrations run automatically at backend startup.
+Press Ctrl+C in both backend and frontend terminals.
 
 ## License
 

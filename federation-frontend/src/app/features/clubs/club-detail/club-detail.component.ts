@@ -5,6 +5,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialog } from '@angular/material/dialog';
 import { MatTabsModule } from '@angular/material/tabs';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
 import { PageHeaderComponent } from '@shared/components/page-header/page-header.component';
 import { LoadingSpinnerComponent } from '@shared/components/loading-spinner/loading-spinner.component';
 import { StatusChipComponent } from '@shared/components/status-chip/status-chip.component';
@@ -46,6 +48,8 @@ interface ClubDetail {
     MatButtonModule,
     MatIconModule,
     MatTabsModule,
+    MatFormFieldModule,
+    MatSelectModule,
     PageHeaderComponent,
     LoadingSpinnerComponent,
     StatusChipComponent,
@@ -135,9 +139,54 @@ interface ClubDetail {
             </mat-tab>
 
             <mat-tab label="Roster">
-              <div class="p-6 text-center text-surface-400 py-16">
-                <mat-icon class="!text-5xl text-surface-200">groups</mat-icon>
-                <p class="mt-3 text-sm">Athlete roster integration is next.</p>
+              <div class="p-6">
+                @if (canManage) {
+                  <div class="mb-4 flex items-end gap-3">
+                    <mat-form-field appearance="outline" class="w-96">
+                      <mat-label>Assign athlete to this club</mat-label>
+                      <mat-select [value]="selectedAthleteId" (selectionChange)="selectedAthleteId = $event.value">
+                        @for (a of assignableAthletes(); track a.userId) {
+                          <mat-option [value]="a.userId">{{ a.firstName }} {{ a.lastName }} ({{ a.licenseNumber }})</mat-option>
+                        }
+                      </mat-select>
+                    </mat-form-field>
+                    <button mat-flat-button color="primary" (click)="assignSelectedAthlete()" [disabled]="!selectedAthleteId">
+                      <mat-icon>person_add</mat-icon> Assign
+                    </button>
+                  </div>
+                }
+
+                @if (rosterLoading()) {
+                  <app-loading-spinner message="Loading athletes…" />
+                } @else if (roster().length === 0) {
+                  <div class="text-center text-surface-400 py-12">
+                    <mat-icon class="!text-5xl text-surface-200">groups</mat-icon>
+                    <p class="mt-3 text-sm">No athletes belong to this club yet.</p>
+                  </div>
+                } @else {
+                  <table class="w-full text-sm">
+                    <thead class="bg-surface-50 border-b border-surface-100">
+                      <tr>
+                        <th class="text-left p-3 font-semibold">Name</th>
+                        <th class="text-left p-3 font-semibold">License</th>
+                        <th class="text-left p-3 font-semibold">Gender</th>
+                        <th class="text-left p-3 font-semibold">Category</th>
+                        <th class="text-left p-3 font-semibold">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (a of roster(); track a.id) {
+                        <tr class="border-b border-surface-100">
+                          <td class="p-3">{{ a.firstName }} {{ a.lastName }}</td>
+                          <td class="p-3">{{ a.licenseNumber }}</td>
+                          <td class="p-3">{{ a.gender }}</td>
+                          <td class="p-3">{{ a.category }}</td>
+                          <td class="p-3"><app-status-chip [status]="a.status" /></td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                }
               </div>
             </mat-tab>
           </mat-tab-group>
@@ -156,6 +205,10 @@ export class ClubDetailComponent implements OnInit {
 
   club = signal<ClubDetail | null>(null);
   loading = signal(true);
+  roster = signal<any[]>([]);
+  rosterLoading = signal(false);
+  assignableAthletes = signal<any[]>([]);
+  selectedAthleteId: string | null = null;
 
   get canManage(): boolean {
     return this.auth.hasAnyRole([UserRole.ADMIN, UserRole.FEDERATION_STAFF]);
@@ -167,6 +220,8 @@ export class ClubDetailComponent implements OnInit {
       next: c => {
         this.club.set(c);
         this.loading.set(false);
+        this.loadRoster(c.id);
+        this.loadAssignableAthletes(c.id);
       },
       error: () => this.loading.set(false),
     });
@@ -216,6 +271,40 @@ export class ClubDetailComponent implements OnInit {
           this.router.navigate(['/admin/clubs']);
         },
       });
+    });
+  }
+
+  private loadRoster(clubId: string): void {
+    this.rosterLoading.set(true);
+    this.api.getPaged<any>('/athletes', { page: 0, size: 200, clubId }).subscribe({
+      next: p => { this.roster.set(p.content); this.rosterLoading.set(false); },
+      error: () => this.rosterLoading.set(false),
+    });
+  }
+
+  private loadAssignableAthletes(clubId: string): void {
+    this.api.get<any[]>('/users/athlete-users').subscribe({
+      next: p => {
+        const candidates = (p ?? []).filter((a: any) => !a.clubId || a.clubId !== clubId);
+        this.assignableAthletes.set(candidates);
+      },
+    });
+  }
+
+  assignSelectedAthlete(): void {
+    const club = this.club();
+    if (!club || !this.selectedAthleteId) return;
+
+    this.api.post(`/athletes/users/${this.selectedAthleteId}/club`, { clubId: club.id }).subscribe({
+      next: () => {
+        this.notify.success('Athlete assigned to club.');
+        this.selectedAthleteId = null;
+        this.loadRoster(club.id);
+        this.loadAssignableAthletes(club.id);
+      },
+      error: (err) => {
+        this.notify.error(err?.error?.message ?? 'Could not assign athlete to club.');
+      },
     });
   }
 }

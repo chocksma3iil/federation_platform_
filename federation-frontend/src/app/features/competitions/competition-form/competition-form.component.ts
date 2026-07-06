@@ -44,9 +44,29 @@ import { LoadingSpinnerComponent } from '@shared/components/loading-spinner/load
               <mat-select formControlName="status">
                 <mat-option value="DRAFT">Draft</mat-option>
                 <mat-option value="PUBLISHED">Published</mat-option>
+                <mat-option value="REGISTRATION_OPEN">Registration Open</mat-option>
+                <mat-option value="REGISTRATION_CLOSED">Registration Closed</mat-option>
                 <mat-option value="ONGOING">Ongoing</mat-option>
                 <mat-option value="COMPLETED">Completed</mat-option>
                 <mat-option value="CANCELLED">Cancelled</mat-option>
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Level</mat-label>
+              <mat-select formControlName="level">
+                <mat-option value="LOCAL">Local</mat-option>
+                <mat-option value="REGIONAL">Regional</mat-option>
+                <mat-option value="NATIONAL">National</mat-option>
+                <mat-option value="INTERNATIONAL">International</mat-option>
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Format</mat-label>
+              <mat-select formControlName="format">
+                <mat-option value="INDIVIDUAL">Individual</mat-option>
+                <mat-option value="TEAM">Team</mat-option>
+                <mat-option value="RELAY">Relay</mat-option>
+                <mat-option value="MIXED">Mixed</mat-option>
               </mat-select>
             </mat-form-field>
             <mat-form-field appearance="outline">
@@ -60,6 +80,14 @@ import { LoadingSpinnerComponent } from '@shared/components/loading-spinner/load
             <mat-form-field appearance="outline">
               <mat-label>End Date</mat-label>
               <input matInput type="date" formControlName="endDate" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Registration Deadline</mat-label>
+              <input matInput type="date" formControlName="registrationDeadline" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Max Participants</mat-label>
+              <input matInput type="number" formControlName="maxParticipants" />
             </mat-form-field>
           </div>
 
@@ -95,9 +123,13 @@ export class CompetitionFormComponent implements OnInit {
     name: ['', Validators.required],
     description: [''],
     sport: ['', Validators.required],
+    level: ['NATIONAL'],
+    format: ['INDIVIDUAL'],
     venueCity: [''],
     startDate: ['', Validators.required],
     endDate: ['', Validators.required],
+    registrationDeadline: [''],
+    maxParticipants: [null as number | null],
     status: ['DRAFT'],
   });
 

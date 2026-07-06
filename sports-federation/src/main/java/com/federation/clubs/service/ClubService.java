@@ -9,6 +9,8 @@ import com.federation.clubs.repository.ClubRepository;
 import com.federation.common.exception.ResourceAlreadyExistsException;
 import com.federation.common.exception.ResourceNotFoundException;
 import com.federation.common.response.PagedResponse;
+import com.federation.users.entity.User;
+import com.federation.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -32,6 +34,7 @@ import org.springframework.data.domain.PageImpl;
 public class ClubService {
 
     private final ClubRepository clubRepository;
+    private final UserRepository userRepository;
     private final ClubMapper     clubMapper;
 
     // ── Read ──────────────────────────────────────────────────────────────
@@ -90,6 +93,7 @@ public class ClubService {
         }
         Club club = clubMapper.toEntity(request);
         club.setSlug(generateUniqueSlug(request.getName()));
+        resolveManager(club, request.getManagerId());
         if (request.getStatus() == null) club.setStatus(ClubStatus.ACTIVE);
         Club saved = clubRepository.save(club);
         log.info("Club created: {} ({})", saved.getName(), saved.getId());
@@ -116,6 +120,7 @@ public class ClubService {
         }
 
         clubMapper.updateEntity(request, club);
+        resolveManager(club, request.getManagerId());
         Club saved = clubRepository.save(club);
         log.info("Club updated: {}", saved.getId());
         return clubMapper.toResponse(saved);
@@ -132,6 +137,14 @@ public class ClubService {
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────
+
+    private void resolveManager(Club club, java.util.UUID managerId) {
+        if (managerId != null) {
+            User manager = userRepository.findById(managerId)
+                    .orElseThrow(() -> new ResourceNotFoundException("User", "id", managerId));
+            club.setManager(manager);
+        }
+    }
 
     private String generateUniqueSlug(String name) {
         String base = Normalizer.normalize(name, Normalizer.Form.NFD)

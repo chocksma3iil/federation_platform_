@@ -49,4 +49,6 @@ public class ClubRequest {
     private String phone;
 
     private ClubStatus status;
+
+    private java.util.UUID managerId;
 }

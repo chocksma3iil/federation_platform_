@@ -244,6 +244,13 @@ export const routes: Routes = [
         title: 'My Registrations',
       },
       {
+        path: 'register',
+        loadComponent: () =>
+          import('./features/portal/register-competition/register-competition.component')
+            .then(m => m.RegisterCompetitionComponent),
+        title: 'Register for Competition',
+      },
+      {
         path: 'results',
         loadComponent: () =>
           import('./features/portal/my-results/my-results.component')

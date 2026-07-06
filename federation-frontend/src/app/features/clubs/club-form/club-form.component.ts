@@ -125,6 +125,16 @@ import { NotificationService } from '@core/services/notification.service';
               <mat-label>Phone</mat-label>
               <input matInput formControlName="phone" />
             </mat-form-field>
+
+            <mat-form-field appearance="outline" class="md:col-span-2">
+              <mat-label>Manager</mat-label>
+              <mat-select formControlName="managerId">
+                <mat-option [value]="null">— None —</mat-option>
+                @for (m of managers(); track m.id) {
+                  <mat-option [value]="m.id">{{ m.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
           </div>
 
           <mat-form-field appearance="outline" class="w-full">
@@ -154,6 +164,7 @@ export class ClubFormComponent implements OnInit {
   initLoading = signal(false);
   isEdit = false;
   clubId?: string;
+  managers = signal<{id: string; label: string}[]>([]);
 
   form = this.fb.group({
     name: ['', Validators.required],
@@ -170,6 +181,7 @@ export class ClubFormComponent implements OnInit {
     email: ['', Validators.email],
     phone: [''],
     status: ['ACTIVE'],
+    managerId: [null as string | null],
   });
 
   get f() { return this.form.controls; }
@@ -177,6 +189,8 @@ export class ClubFormComponent implements OnInit {
   ngOnInit(): void {
     this.clubId = this.route.snapshot.paramMap.get('id') ?? undefined;
     this.isEdit = !!this.clubId;
+
+    this.loadManagers();
 
     if (this.isEdit) {
       this.initLoading.set(true);
@@ -215,6 +229,12 @@ export class ClubFormComponent implements OnInit {
         this.router.navigate(['/admin/clubs']);
       },
       error: () => this.saving.set(false),
+    });
+  }
+
+  private loadManagers(): void {
+    this.api.getPaged<any>('/users', { page: 0, size: 500, role: 'ROLE_CLUB_MANAGER' }).subscribe({
+      next: p => this.managers.set(p.content.map((u: any) => ({ id: u.id, label: `${u.firstName} ${u.lastName} (${u.email})` }))),
     });
   }
 }

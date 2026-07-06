@@ -144,7 +144,6 @@ export class NavbarComponent {
     { label: 'Home',         path: '/home',         exact: true },
     { label: 'Competitions', path: '/competitions' },
     { label: 'Clubs',        path: '/clubs' },
-    { label: 'Athletes',     path: '/athletes' },
     { label: 'Results',      path: '/results' },
     { label: 'News',         path: '/news' },
   ];

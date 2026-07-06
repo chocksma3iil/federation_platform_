@@ -2,6 +2,7 @@ package com.federation.athletes.controller;
 
 import com.federation.athletes.dto.AthleteRequest;
 import com.federation.athletes.dto.AthleteResponse;
+import com.federation.athletes.dto.AthleteClubAssignmentRequest;
 import com.federation.athletes.service.AthleteService;
 import com.federation.common.response.ApiResponse;
 import com.federation.common.response.PagedResponse;
@@ -75,5 +76,29 @@ public class AthleteController {
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable UUID id) {
         athleteService.delete(id);
         return ResponseEntity.ok(ApiResponse.noContent());
+    }
+
+    @Operation(summary = "Assign athlete to a club")
+    @PatchMapping("/{id}/club")
+    public ResponseEntity<ApiResponse<AthleteResponse>> assignClub(
+            @PathVariable UUID id,
+            @Valid @RequestBody AthleteClubAssignmentRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(athleteService.assignClub(id, request)));
+    }
+
+    @Operation(summary = "Assign athlete to a club (POST compatibility)")
+    @PostMapping("/{id}/club")
+    public ResponseEntity<ApiResponse<AthleteResponse>> assignClubPostCompat(
+            @PathVariable UUID id,
+            @Valid @RequestBody AthleteClubAssignmentRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(athleteService.assignClub(id, request)));
+    }
+
+    @Operation(summary = "Assign athlete user to a club")
+    @PostMapping("/users/{userId}/club")
+    public ResponseEntity<ApiResponse<AthleteResponse>> assignClubByUser(
+            @PathVariable UUID userId,
+            @Valid @RequestBody AthleteClubAssignmentRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(athleteService.assignClubByUserId(userId, request)));
     }
 }

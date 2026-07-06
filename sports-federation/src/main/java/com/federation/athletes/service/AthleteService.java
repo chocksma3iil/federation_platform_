@@ -2,6 +2,7 @@ package com.federation.athletes.service;
 
 import com.federation.athletes.dto.AthleteRequest;
 import com.federation.athletes.dto.AthleteResponse;
+import com.federation.athletes.dto.AthleteClubAssignmentRequest;
 import com.federation.athletes.entity.Athlete;
 import com.federation.athletes.entity.AthleteCategory;
 import com.federation.athletes.entity.AthleteStatus;
@@ -11,6 +12,8 @@ import com.federation.clubs.entity.Club;
 import com.federation.clubs.repository.ClubRepository;
 import com.federation.common.exception.ResourceAlreadyExistsException;
 import com.federation.common.exception.ResourceNotFoundException;
+import com.federation.users.entity.User;
+import com.federation.users.repository.UserRepository;
 import com.federation.common.response.PagedResponse;
 import com.federation.common.util.Gender;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +39,7 @@ public class AthleteService {
 
     private final AthleteRepository athleteRepository;
     private final ClubRepository    clubRepository;
+    private final UserRepository    userRepository;
     private final AthleteMapper     athleteMapper;
 
     // ── Read ──────────────────────────────────────────────────────────────
@@ -88,6 +92,7 @@ public class AthleteService {
         }
         Athlete athlete = athleteMapper.toEntity(request);
         resolveClub(athlete, request.getClubId());
+        resolveUser(athlete, request.getUserId());
         computeCategory(athlete);
         if (athlete.getStatus() == null) athlete.setStatus(AthleteStatus.ACTIVE);
         Athlete saved = athleteRepository.save(athlete);
@@ -101,6 +106,7 @@ public class AthleteService {
         Athlete athlete = getOrThrow(id);
         athleteMapper.updateEntity(request, athlete);
         resolveClub(athlete, request.getClubId());
+        resolveUser(athlete, request.getUserId());
         computeCategory(athlete);
         Athlete saved = athleteRepository.save(athlete);
         log.info("Athlete updated: {}", id);
@@ -117,6 +123,31 @@ public class AthleteService {
         log.info("Athlete deleted: {}", id);
     }
 
+    @Transactional
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_FEDERATION_STAFF','ROLE_CLUB_MANAGER')")
+    public AthleteResponse assignClub(UUID athleteId, AthleteClubAssignmentRequest request) {
+        Athlete athlete = getOrThrow(athleteId);
+        Club club = clubRepository.findById(request.getClubId())
+                .orElseThrow(() -> new ResourceNotFoundException("Club", "id", request.getClubId()));
+        athlete.setClub(club);
+        Athlete saved = athleteRepository.save(athlete);
+        log.info("Athlete {} assigned to club {}", athleteId, request.getClubId());
+        return athleteMapper.toResponse(saved);
+    }
+
+    @Transactional
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_FEDERATION_STAFF','ROLE_CLUB_MANAGER')")
+    public AthleteResponse assignClubByUserId(UUID userId, AthleteClubAssignmentRequest request) {
+        Athlete athlete = athleteRepository.findFirstByUserIdOrderByCreatedAtDesc(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Athlete", "userId", userId));
+        Club club = clubRepository.findById(request.getClubId())
+                .orElseThrow(() -> new ResourceNotFoundException("Club", "id", request.getClubId()));
+        athlete.setClub(club);
+        Athlete saved = athleteRepository.save(athlete);
+        log.info("Athlete user {} assigned to club {}", userId, request.getClubId());
+        return athleteMapper.toResponse(saved);
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────
 
     private Athlete getOrThrow(UUID id) {
@@ -129,6 +160,14 @@ public class AthleteService {
             Club club = clubRepository.findById(clubId)
                     .orElseThrow(() -> new ResourceNotFoundException("Club", "id", clubId));
             athlete.setClub(club);
+        }
+    }
+
+    private void resolveUser(Athlete athlete, UUID userId) {
+        if (userId != null) {
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+            athlete.setUser(user);
         }
     }
 
