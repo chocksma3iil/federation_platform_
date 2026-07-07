@@ -3,6 +3,7 @@ package com.federation.users.controller;
 import com.federation.common.exception.ResourceNotFoundException;
 import com.federation.common.exception.ResourceAlreadyExistsException;
 import com.federation.common.response.ApiResponse;
+import com.federation.common.util.Gender;
 import com.federation.common.response.PagedResponse;
 import com.federation.athletes.entity.Athlete;
 import com.federation.athletes.repository.AthleteRepository;
@@ -28,6 +29,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -83,7 +85,7 @@ public class UserController {
             result = findWithSearch(normalizedSearch, roleFilter, statusFilter, pageRequest);
         }
 
-        List<UserResponse> mapped = result.getContent().stream().map(UserController::toResponse).toList();
+        List<UserResponse> mapped = result.getContent().stream().map(this::toResponse).toList();
         return ResponseEntity.ok(ApiResponse.ok(PagedResponse.of(result, mapped)));
     }
 
@@ -159,10 +161,46 @@ public class UserController {
                 .build());
 
         if (created.getRole() == UserRole.ROLE_ATHLETE) {
-            athleteProfileProvisioningService.ensureAthleteProfile(created);
+            athleteProfileProvisioningService.ensureAthleteProfile(created, request.getGender());
         }
 
         return ResponseEntity.status(201).body(ApiResponse.created(toResponse(created)));
+    }
+
+    @Operation(summary = "Update a user")
+    @PutMapping("/{id:[0-9a-fA-F-]{36}}")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public ResponseEntity<ApiResponse<UserResponse>> update(
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdateUserRequest request) {
+
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
+
+        String email = request.getEmail().trim().toLowerCase();
+        String username = request.getUsername().trim();
+
+        if (!email.equalsIgnoreCase(user.getEmail()) && userRepository.existsByEmail(email)) {
+            throw new ResourceAlreadyExistsException("A user with email '" + email + "' already exists.");
+        }
+        if (!username.equalsIgnoreCase(user.getUsername()) && userRepository.existsByUsername(username)) {
+            throw new ResourceAlreadyExistsException("A user with username '" + username + "' already exists.");
+        }
+
+        user.setEmail(email);
+        user.setUsername(username);
+        user.setFirstName(request.getFirstName().trim());
+        user.setLastName(request.getLastName().trim());
+        user.setPhone(request.getPhone() != null ? request.getPhone().trim() : null);
+        user.setRole(request.getRole());
+        user.setStatus(request.getStatus() != null ? request.getStatus() : user.getStatus());
+
+        User saved = userRepository.save(user);
+        if (saved.getRole() == UserRole.ROLE_ATHLETE) {
+            athleteProfileProvisioningService.ensureAthleteProfile(saved, request.getGender());
+        }
+
+        return ResponseEntity.ok(ApiResponse.ok(toResponse(saved)));
     }
 
     private static String normalize(String input) {
@@ -217,7 +255,8 @@ public class UserController {
         }
     }
 
-    private static UserResponse toResponse(User u) {
+    private UserResponse toResponse(User u) {
+        Athlete athleteProfile = athleteRepository.findFirstByUserIdOrderByCreatedAtDesc(u.getId()).orElse(null);
         return UserResponse.builder()
                 .id(u.getId())
                 .email(u.getEmail())
@@ -229,6 +268,7 @@ public class UserController {
                 .status(u.getStatus())
                 .phone(u.getPhone())
                 .avatarUrl(u.getAvatarUrl())
+                .gender(athleteProfile != null ? athleteProfile.getGender() : null)
                 .lastLogin(u.getLastLogin())
                 .createdAt(u.getCreatedAt())
                 .updatedAt(u.getUpdatedAt())
@@ -248,6 +288,7 @@ public class UserController {
         UserStatus status;
         String phone;
         String avatarUrl;
+        Gender gender;
         Instant lastLogin;
         Instant createdAt;
         Instant updatedAt;
@@ -281,6 +322,34 @@ public class UserController {
 
         UserStatus status;
         String phone;
+        Gender gender;
+    }
+
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    private static class UpdateUserRequest {
+        @NotBlank
+        @Email
+        String email;
+
+        @NotBlank
+        @Size(min = 3, max = 100)
+        String username;
+
+        @NotBlank
+        String firstName;
+
+        @NotBlank
+        String lastName;
+
+        @NotNull
+        UserRole role;
+
+        UserStatus status;
+        String phone;
+        Gender gender;
     }
 
     @Value

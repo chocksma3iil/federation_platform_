@@ -10,9 +10,11 @@ import com.federation.athletes.mapper.AthleteMapper;
 import com.federation.athletes.repository.AthleteRepository;
 import com.federation.clubs.entity.Club;
 import com.federation.clubs.repository.ClubRepository;
+import com.federation.common.exception.ForbiddenException;
 import com.federation.common.exception.ResourceAlreadyExistsException;
 import com.federation.common.exception.ResourceNotFoundException;
 import com.federation.users.entity.User;
+import com.federation.users.entity.UserRole;
 import com.federation.users.repository.UserRepository;
 import com.federation.common.response.PagedResponse;
 import com.federation.common.util.Gender;
@@ -21,6 +23,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -130,6 +134,7 @@ public class AthleteService {
         Athlete athlete = getOrThrow(athleteId);
         Club club = clubRepository.findById(request.getClubId())
                 .orElseThrow(() -> new ResourceNotFoundException("Club", "id", request.getClubId()));
+        enforceClubManagerOwnsClub(club);
         athlete.setClub(club);
         Athlete saved = athleteRepository.save(athlete);
         log.info("Athlete {} assigned to club {}", athleteId, request.getClubId());
@@ -142,6 +147,7 @@ public class AthleteService {
         Athlete athlete = athleteProfileProvisioningService.ensureAthleteProfile(userId);
         Club club = clubRepository.findById(request.getClubId())
                 .orElseThrow(() -> new ResourceNotFoundException("Club", "id", request.getClubId()));
+        enforceClubManagerOwnsClub(club);
         athlete.setClub(club);
         Athlete saved = athleteRepository.save(athlete);
         log.info("Athlete user {} assigned to club {}", userId, request.getClubId());
@@ -182,5 +188,27 @@ public class AthleteService {
         if (value == null || value.isBlank()) return null;
         try { return Enum.valueOf(clazz, value.toUpperCase()); }
         catch (IllegalArgumentException e) { return null; }
+    }
+
+    private void enforceClubManagerOwnsClub(Club targetClub) {
+        User currentUser = getCurrentUser();
+        if (currentUser.getRole() != UserRole.ROLE_CLUB_MANAGER) {
+            return;
+        }
+
+        if (targetClub.getManager() == null || !targetClub.getManager().getId().equals(currentUser.getId())) {
+            throw new ForbiddenException("Club managers can only assign athletes to their own club.");
+        }
+    }
+
+    private User getCurrentUser() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
+            throw new ForbiddenException("Authentication is required.");
+        }
+
+        String principal = auth.getName();
+        return userRepository.findByEmailOrUsername(principal)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "email", principal));
     }
 }

@@ -9,6 +9,7 @@ import { MatInputModule }    from '@angular/material/input';
 import { MatButtonModule }   from '@angular/material/button';
 import { MatIconModule }     from '@angular/material/icon';
 import { MatMenuModule }     from '@angular/material/menu';
+import { MatTabsModule }     from '@angular/material/tabs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 import { ApiService }              from '@core/services/api.service';
@@ -38,7 +39,7 @@ export interface Club {
   imports: [
     CommonModule, RouterModule, ReactiveFormsModule,
     MatTableModule, MatPaginatorModule, MatFormFieldModule, MatInputModule,
-    MatButtonModule, MatIconModule, MatMenuModule,
+    MatButtonModule, MatIconModule, MatMenuModule, MatTabsModule,
     PageHeaderComponent, StatusChipComponent, LoadingSpinnerComponent, EmptyStateComponent,
   ],
   template: `
@@ -51,56 +52,174 @@ export interface Club {
       }
     </app-page-header>
 
-    <div class="card-padded mb-4">
-      <mat-form-field appearance="outline" class="w-full max-w-md">
-        <mat-label>Search clubs…</mat-label>
-        <input matInput [formControl]="searchCtrl" autocomplete="off" />
-        <mat-icon matPrefix>search</mat-icon>
-      </mat-form-field>
+    <div class="mb-4 overflow-hidden rounded-[26px] border border-surface-200/80 bg-[radial-gradient(circle_at_top_right,_rgba(14,165,233,0.14),_transparent_22%),linear-gradient(180deg,_rgba(255,255,255,0.98),_rgba(248,250,252,0.95))] shadow-sm">
+      <div class="grid gap-5 p-5 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,0.9fr)] lg:items-end">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-[0.2em] text-sky-700">Club directory</p>
+          <h2 class="mt-2 text-2xl font-black tracking-tight text-surface-900">Live clubs overview</h2>
+          <p class="mt-2 max-w-2xl text-sm text-surface-500">
+            Browse every registered club, open the managed roster faster, and keep athlete counts visible on each card.
+          </p>
+          <mat-form-field appearance="outline" class="mt-4 w-full max-w-md">
+            <mat-label>Search clubs…</mat-label>
+            <input matInput [formControl]="searchCtrl" autocomplete="off" />
+            <mat-icon matPrefix>search</mat-icon>
+          </mat-form-field>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="rounded-2xl border border-white bg-white/90 p-4 shadow-sm">
+            <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-surface-400">Total clubs</p>
+            <p class="mt-2 text-3xl font-black tracking-tight text-surface-900">{{ total() }}</p>
+            <p class="mt-1 text-xs text-surface-500">Across the current filtered result set</p>
+          </div>
+          <div class="rounded-2xl border border-white bg-white/90 p-4 shadow-sm">
+            <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-surface-400">Visible athletes</p>
+            <p class="mt-2 text-3xl font-black tracking-tight text-surface-900">{{ visibleAthleteTotal() }}</p>
+            <p class="mt-1 text-xs text-surface-500">Summed from loaded club cards</p>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div class="card relative">
-      @if (loading()) { <app-loading-spinner [overlay]="true" /> }
-      @if (!loading() && clubs().length === 0) {
-        <app-empty-state icon="groups" title="No clubs found"
-          subtitle="Register your first club to get started."
-          [actionLabel]="canManage ? 'New Club' : ''" />
-      } @else {
-        <!-- Grid layout for clubs -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
-          @for (club of clubs(); track club.id) {
-            <a [routerLink]="[club.id]"
-               class="border border-surface-200 rounded-xl p-4 hover:border-primary-300
-                      hover:shadow-card-md transition-all group flex items-center gap-4">
-              @if (club.logoUrl) {
-                <img [src]="club.logoUrl" [alt]="club.name"
-                     class="w-12 h-12 rounded-lg object-contain flex-shrink-0 bg-surface-50 p-1" />
-              } @else {
-                <div class="w-12 h-12 rounded-lg bg-primary-100 flex items-center justify-center
-                            text-primary-700 font-bold text-lg flex-shrink-0">
-                  {{ (club.shortName ?? club.name).charAt(0) }}
-                </div>
-              }
-              <div class="flex-1 min-w-0">
-                <p class="font-semibold text-surface-900 truncate group-hover:text-primary-600
-                           transition-colors">{{ club.name }}</p>
-                <p class="text-xs text-surface-400 mt-0.5">{{ club.city }}{{ club.region ? ', ' + club.region : '' }}</p>
-                <div class="flex items-center gap-2 mt-1.5">
-                  <app-status-chip [status]="club.status" />
-                  @if (club.activeAthletes !== undefined) {
-                    <span class="text-xs text-surface-500">{{ club.activeAthletes }} athletes</span>
-                  }
-                </div>
+    @if (showManagerTabs) {
+      <div class="card relative">
+        <mat-tab-group>
+          <mat-tab label="All Clubs">
+            @if (loading()) { <app-loading-spinner [overlay]="true" /> }
+            @if (!loading() && clubs().length === 0) {
+              <app-empty-state icon="groups" title="No clubs found"
+                subtitle="No clubs available yet." />
+            } @else {
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+                @for (club of clubs(); track club.id) {
+                  <a [routerLink]="[club.id]"
+                     class="group relative overflow-hidden rounded-2xl border border-surface-200/80 bg-white p-4 transition-all hover:-translate-y-0.5 hover:border-primary-300 hover:shadow-card-md flex items-center gap-4">
+                    <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-sky-500 via-cyan-500 to-emerald-500 opacity-80"></div>
+                    @if (club.logoUrl) {
+                      <img [src]="club.logoUrl" [alt]="club.name"
+                           class="w-12 h-12 rounded-lg object-contain flex-shrink-0 bg-surface-50 p-1" />
+                    } @else {
+                      <div class="w-12 h-12 rounded-lg bg-primary-100 flex items-center justify-center
+                                  text-primary-700 font-bold text-lg flex-shrink-0">
+                        {{ (club.shortName ?? club.name).charAt(0) }}
+                      </div>
+                    }
+                    <div class="flex-1 min-w-0">
+                      <p class="font-semibold text-surface-900 truncate group-hover:text-primary-600
+                                 transition-colors">{{ club.name }}</p>
+                      <p class="text-xs text-surface-400 mt-0.5">{{ club.city }}{{ club.region ? ', ' + club.region : '' }}</p>
+                      <div class="flex items-center gap-2 mt-1.5">
+                        <app-status-chip [status]="club.status" />
+                        @if (club.activeAthletes !== undefined) {
+                          <span class="rounded-full bg-surface-100 px-2.5 py-1 text-xs font-medium text-surface-600">{{ club.activeAthletes }} active athletes</span>
+                        }
+                      </div>
+                    </div>
+                  </a>
+                }
               </div>
-            </a>
-          }
-        </div>
-        <div class="border-t border-surface-100">
-          <mat-paginator [length]="total()" [pageSize]="24" [pageSizeOptions]="[12,24,48]"
-            [pageIndex]="pageIndex()" (page)="onPage($event)" showFirstLastButtons />
-        </div>
-      }
-    </div>
+              <div class="border-t border-surface-100">
+                <mat-paginator [length]="total()" [pageSize]="24" [pageSizeOptions]="[12,24,48]"
+                  [pageIndex]="pageIndex()" (page)="onPage($event)" showFirstLastButtons />
+              </div>
+            }
+          </mat-tab>
+
+          <mat-tab label="My Club">
+            <div class="relative min-h-56">
+              @if (myClubLoading()) { <app-loading-spinner [overlay]="true" /> }
+              @if (!myClubLoading() && myClub()) {
+                <div class="p-4">
+                  <a [routerLink]="[myClub()!.id]"
+                     class="group relative overflow-hidden rounded-2xl border border-surface-200/80 bg-white p-4 transition-all hover:-translate-y-0.5 hover:border-primary-300 hover:shadow-card-md flex items-center gap-4">
+                    <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-sky-500 via-cyan-500 to-emerald-500 opacity-80"></div>
+                    @if (myClub()!.logoUrl) {
+                      <img [src]="myClub()!.logoUrl" [alt]="myClub()!.name"
+                           class="w-12 h-12 rounded-lg object-contain flex-shrink-0 bg-surface-50 p-1" />
+                    } @else {
+                      <div class="w-12 h-12 rounded-lg bg-primary-100 flex items-center justify-center
+                                  text-primary-700 font-bold text-lg flex-shrink-0">
+                        {{ (myClub()!.shortName ?? myClub()!.name).charAt(0) }}
+                      </div>
+                    }
+                    <div class="flex-1 min-w-0">
+                      <p class="font-semibold text-surface-900 truncate group-hover:text-primary-600 transition-colors">
+                        {{ myClub()!.name }}
+                      </p>
+                      <p class="text-xs text-surface-400 mt-0.5">
+                        {{ myClub()!.city }}{{ myClub()!.region ? ', ' + myClub()!.region : '' }}
+                      </p>
+                      <div class="flex items-center gap-2 mt-1.5">
+                        <app-status-chip [status]="myClub()!.status" />
+                        @if (myClub()!.activeAthletes !== undefined) {
+                          <span class="rounded-full bg-surface-100 px-2.5 py-1 text-xs font-medium text-surface-600">{{ myClub()!.activeAthletes }} active athletes</span>
+                        }
+                      </div>
+                    </div>
+                  </a>
+
+                  <div class="mt-4 flex justify-end gap-2">
+                    <a mat-stroked-button [routerLink]="[myClub()!.id]">
+                      <mat-icon>visibility</mat-icon> Open Club
+                    </a>
+                    <a mat-flat-button color="primary" [routerLink]="[myClub()!.id]">
+                      <mat-icon>person_add</mat-icon> Add Athletes
+                    </a>
+                  </div>
+                </div>
+              } @else if (!myClubLoading()) {
+                <app-empty-state icon="groups" title="No managed club"
+                  subtitle="No club is assigned to your manager account yet." />
+              }
+            </div>
+          </mat-tab>
+        </mat-tab-group>
+      </div>
+    } @else {
+      <div class="card relative">
+        @if (loading()) { <app-loading-spinner [overlay]="true" /> }
+        @if (!loading() && clubs().length === 0) {
+          <app-empty-state icon="groups" title="No clubs found"
+            subtitle="Register your first club to get started."
+            [actionLabel]="canManage ? 'New Club' : ''" />
+        } @else {
+          <!-- Grid layout for clubs -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+            @for (club of clubs(); track club.id) {
+              <a [routerLink]="[club.id]"
+                 class="group relative overflow-hidden rounded-2xl border border-surface-200/80 bg-white p-4 transition-all hover:-translate-y-0.5 hover:border-primary-300 hover:shadow-card-md flex items-center gap-4">
+                <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-sky-500 via-cyan-500 to-emerald-500 opacity-80"></div>
+                @if (club.logoUrl) {
+                  <img [src]="club.logoUrl" [alt]="club.name"
+                       class="w-12 h-12 rounded-lg object-contain flex-shrink-0 bg-surface-50 p-1" />
+                } @else {
+                  <div class="w-12 h-12 rounded-lg bg-primary-100 flex items-center justify-center
+                              text-primary-700 font-bold text-lg flex-shrink-0">
+                    {{ (club.shortName ?? club.name).charAt(0) }}
+                  </div>
+                }
+                <div class="flex-1 min-w-0">
+                  <p class="font-semibold text-surface-900 truncate group-hover:text-primary-600
+                             transition-colors">{{ club.name }}</p>
+                  <p class="text-xs text-surface-400 mt-0.5">{{ club.city }}{{ club.region ? ', ' + club.region : '' }}</p>
+                  <div class="flex items-center gap-2 mt-1.5">
+                    <app-status-chip [status]="club.status" />
+                    @if (club.activeAthletes !== undefined) {
+                      <span class="rounded-full bg-surface-100 px-2.5 py-1 text-xs font-medium text-surface-600">{{ club.activeAthletes }} active athletes</span>
+                    }
+                  </div>
+                </div>
+              </a>
+            }
+          </div>
+          <div class="border-t border-surface-100">
+            <mat-paginator [length]="total()" [pageSize]="24" [pageSizeOptions]="[12,24,48]"
+              [pageIndex]="pageIndex()" (page)="onPage($event)" showFirstLastButtons />
+          </div>
+        }
+      </div>
+    }
   `,
 })
 export class ClubsListComponent implements OnInit {
@@ -108,17 +227,30 @@ export class ClubsListComponent implements OnInit {
   readonly auth = inject(AuthService);
 
   clubs     = signal<Club[]>([]);
+  myClub    = signal<Club | null>(null);
+  myClubLoading = signal(false);
   loading   = signal(true);
   total     = signal(0);
   pageIndex = signal(0);
   searchCtrl = new FormControl('');
 
+  get showManagerTabs(): boolean {
+    return this.auth.hasRole(UserRole.CLUB_MANAGER);
+  }
+
   get canManage(): boolean {
     return this.auth.hasAnyRole([UserRole.ADMIN, UserRole.FEDERATION_STAFF]);
   }
 
+  visibleAthleteTotal(): number {
+    return this.clubs().reduce((sum, club) => sum + (club.activeAthletes ?? 0), 0);
+  }
+
   ngOnInit(): void {
     this.load();
+    if (this.showManagerTabs) {
+      this.loadMyClub();
+    }
     this.searchCtrl.valueChanges.pipe(debounceTime(350), distinctUntilChanged())
       .subscribe(() => { this.pageIndex.set(0); this.load(); });
   }
@@ -135,4 +267,26 @@ export class ClubsListComponent implements OnInit {
   }
 
   onPage(e: PageEvent): void { this.pageIndex.set(e.pageIndex); this.load(); }
+
+  private loadMyClub(): void {
+    const currentUserId = this.auth.currentUser()?.id;
+    if (!currentUserId) {
+      this.myClub.set(null);
+      return;
+    }
+
+    this.myClubLoading.set(true);
+    this.api.getPaged<any>('/clubs', { page: 0, size: 500 }).subscribe({
+      next: p => {
+        const all = p.content ?? [];
+        const managed = all.find((c: any) => String(c.managerId) === String(currentUserId)) ?? null;
+        this.myClub.set(managed);
+        this.myClubLoading.set(false);
+      },
+      error: () => {
+        this.myClub.set(null);
+        this.myClubLoading.set(false);
+      },
+    });
+  }
 }

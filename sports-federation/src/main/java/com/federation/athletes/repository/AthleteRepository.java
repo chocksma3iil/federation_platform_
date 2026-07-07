@@ -42,5 +42,6 @@ public interface AthleteRepository extends JpaRepository<Athlete, UUID> {
         List<Athlete> findAllByClubIdWithUserAndClub(@Param("clubId") UUID clubId);
 
     boolean existsByLicenseNumber(String licenseNumber);
+    long countByClubId(UUID clubId);
     long countByClubIdAndStatus(UUID clubId, AthleteStatus status);
 }

@@ -1,6 +1,6 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router } from '@angular/router';
+import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -62,6 +62,18 @@ import { PageHeaderComponent } from '@shared/components/page-header/page-header.
             </mat-select>
           </mat-form-field>
           <mat-form-field appearance="outline">
+            <mat-label>Gender</mat-label>
+            <mat-select formControlName="gender">
+              <mat-option [value]="null">Not set</mat-option>
+              <mat-option value="MALE">Male</mat-option>
+              <mat-option value="FEMALE">Female</mat-option>
+              <mat-option value="OTHER">Other</mat-option>
+            </mat-select>
+            @if (isAthleteRole()) {
+              <mat-hint>Used for athlete event eligibility during registration.</mat-hint>
+            }
+          </mat-form-field>
+          <mat-form-field appearance="outline">
             <mat-label>Status</mat-label>
             <mat-select formControlName="status">
               <mat-option value="ACTIVE">Active</mat-option>
@@ -82,13 +94,16 @@ import { PageHeaderComponent } from '@shared/components/page-header/page-header.
     </div>
   `,
 })
-export class UserFormComponent {
+export class UserFormComponent implements OnInit {
   private fb = inject(FormBuilder);
   private api = inject(ApiService);
   private notify = inject(NotificationService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
 
   saving = signal(false);
+  isEdit = signal(false);
+  userId = signal<string | null>(null);
 
   form = this.fb.group({
     firstName: ['', Validators.required],
@@ -98,8 +113,41 @@ export class UserFormComponent {
     password: ['', [Validators.required, Validators.minLength(8)]],
     phone: [''],
     role: ['ROLE_FEDERATION_STAFF', Validators.required],
+    gender: [null as string | null],
     status: ['ACTIVE', Validators.required],
   });
+
+  isAthleteRole(): boolean {
+    return this.form.get('role')?.value === 'ROLE_ATHLETE';
+  }
+
+  ngOnInit(): void {
+    const id = this.route.snapshot.paramMap.get('id');
+    if (!id) {
+      return;
+    }
+
+    this.isEdit.set(true);
+    this.userId.set(id);
+    this.form.get('password')?.clearValidators();
+    this.form.get('password')?.updateValueAndValidity();
+
+    this.api.get<any>(`/users/${id}`).subscribe({
+      next: user => {
+        this.form.patchValue({
+          firstName: user.firstName ?? '',
+          lastName: user.lastName ?? '',
+          email: user.email ?? '',
+          username: user.username ?? '',
+          password: '',
+          phone: user.phone ?? '',
+          role: user.role ?? 'ROLE_FEDERATION_STAFF',
+          gender: user.gender ?? null,
+          status: user.status ?? 'ACTIVE',
+        });
+      },
+    });
+  }
 
   onSubmit(): void {
     if (this.form.invalid) {
@@ -108,9 +156,26 @@ export class UserFormComponent {
     }
 
     this.saving.set(true);
-    this.api.post('/users', this.form.getRawValue()).subscribe({
+    const payload = this.isEdit()
+      ? {
+          firstName: this.form.value.firstName,
+          lastName: this.form.value.lastName,
+          email: this.form.value.email,
+          username: this.form.value.username,
+          phone: this.form.value.phone,
+          role: this.form.value.role,
+          gender: this.form.value.gender,
+          status: this.form.value.status,
+        }
+      : this.form.getRawValue();
+
+    const request = this.isEdit()
+      ? this.api.put(`/users/${this.userId()}`, payload)
+      : this.api.post('/users', payload);
+
+    request.subscribe({
       next: () => {
-        this.notify.success('User created.');
+        this.notify.success(this.isEdit() ? 'User updated.' : 'User created.');
         this.router.navigate(['/admin/users']);
       },
       error: () => this.saving.set(false),

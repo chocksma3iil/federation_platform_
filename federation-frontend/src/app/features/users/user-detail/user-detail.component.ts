@@ -19,6 +19,9 @@ import { LoadingSpinnerComponent } from '@shared/components/loading-spinner/load
         [subtitle]="user()!.email"
         [breadcrumbs]="[{ label: 'Users', path: '/admin/users' }, { label: 'Details' }]">
         <a mat-stroked-button routerLink="/admin/users" actions><mat-icon>arrow_back</mat-icon> Back</a>
+        <a mat-flat-button color="primary" [routerLink]="['/admin/users', user()!.id, 'edit']" actions>
+          <mat-icon>edit</mat-icon> Edit
+        </a>
       </app-page-header>
 
       <div class="card-padded grid grid-cols-1 md:grid-cols-2 gap-4">

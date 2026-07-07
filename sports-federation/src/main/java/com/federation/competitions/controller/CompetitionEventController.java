@@ -57,7 +57,7 @@ public class CompetitionEventController {
         }
 
         @Operation(summary = "Create a new event for a specific competition")
-        @PostMapping("/competitions/{competitionId}")
+        @PostMapping("/competitions/{competitionId:[0-9a-fA-F-]{36}}")
         @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_FEDERATION_STAFF')")
         public ResponseEntity<ApiResponse<EventItem>> createForCompetition(
             @PathVariable UUID competitionId,

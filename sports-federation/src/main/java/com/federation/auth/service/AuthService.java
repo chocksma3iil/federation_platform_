@@ -17,6 +17,10 @@ import com.federation.users.entity.UserStatus;
 import com.federation.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.MailException;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
@@ -30,6 +34,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -59,6 +64,13 @@ public class AuthService {
     private final AuthenticationManager  authManager;
     private final UserDetailsService     userDetailsService;
     private final AuthMapper             authMapper;
+    private final JavaMailSender         mailSender;
+
+    @Value("${app.password-reset.base-url:http://localhost:4200/auth/reset-password}")
+    private String passwordResetBaseUrl;
+
+    @Value("${app.mail.from:no-reply@sports-federation.local}")
+    private String mailFrom;
 
     // ----------------------------------------------------------------
     // Registration
@@ -204,6 +216,67 @@ public class AuthService {
         userRepository.updatePassword(userId, passwordEncoder.encode(request.getNewPassword()));
         refreshTokenRepository.revokeAllUserTokens(userId);
         log.info("Password changed for userId={} — all sessions revoked", userId);
+    }
+
+    // ----------------------------------------------------------------
+    // Forgot/reset password
+    // ----------------------------------------------------------------
+
+    @Transactional
+    public void requestPasswordReset(ForgotPasswordRequest request) {
+        String email = request.getEmail().toLowerCase().strip();
+        Optional<User> userOpt = userRepository.findByEmail(email);
+
+        if (userOpt.isEmpty()) {
+            // Intentionally silent to avoid account enumeration.
+            return;
+        }
+
+        User user = userOpt.get();
+        String token = jwtTokenUtil.generatePasswordResetToken(user.getEmail());
+        String resetLink = passwordResetBaseUrl + "?token=" + token;
+
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(mailFrom);
+            message.setTo(user.getEmail());
+            message.setSubject("Reset your Sports Federation password");
+            message.setText(buildPasswordResetEmailBody(resetLink));
+            mailSender.send(message);
+            log.info("Password reset email sent to {}", user.getEmail());
+        } catch (MailException ex) {
+            // Keep API response generic while surfacing operational issue in logs.
+            log.error("Failed to send password reset email to {}", user.getEmail(), ex);
+            log.info("Password reset fallback link for {}: {}", user.getEmail(), resetLink);
+        }
+    }
+
+    @Transactional
+    public void resetPassword(ResetPasswordRequest request) {
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new BadRequestException("New password and confirmation do not match.");
+        }
+
+        String token = request.getToken();
+        if (!jwtTokenUtil.validateToken(token) || !jwtTokenUtil.isPasswordResetToken(token)) {
+            throw new UnauthorizedException("Invalid or expired reset token.");
+        }
+
+        String email = jwtTokenUtil.extractUsername(token);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "email", email));
+
+        userRepository.updatePassword(user.getId(), passwordEncoder.encode(request.getNewPassword()));
+        refreshTokenRepository.revokeAllUserTokens(user.getId());
+        log.info("Password reset completed for userId={} email={}", user.getId(), user.getEmail());
+    }
+
+    private String buildPasswordResetEmailBody(String resetLink) {
+        return "We received a request to reset your password.\n\n"
+                + "Use the link below to choose a new password:\n"
+                + resetLink
+                + "\n\n"
+                + "If you did not request this, you can safely ignore this email.";
     }
 
     // ----------------------------------------------------------------

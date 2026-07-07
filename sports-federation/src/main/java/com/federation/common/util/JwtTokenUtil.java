@@ -41,6 +41,7 @@ public class JwtTokenUtil {
     private static final String CLAIM_TYPE  = "type";
     private static final String TYPE_ACCESS  = "ACCESS";
     private static final String TYPE_REFRESH = "REFRESH";
+    private static final String TYPE_PASSWORD_RESET = "PASSWORD_RESET";
 
     private final JwtProperties jwtProperties;
 
@@ -64,6 +65,13 @@ public class JwtTokenUtil {
         Map<String, Object> claims = new HashMap<>();
         claims.put(CLAIM_TYPE, TYPE_REFRESH);
         return buildToken(claims, userDetails.getUsername(), jwtProperties.getRefreshExpirationMs());
+    }
+
+    public String generatePasswordResetToken(String email) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put(CLAIM_TYPE, TYPE_PASSWORD_RESET);
+        long ttlMs = 15 * 60 * 1000L; // 15 minutes
+        return buildToken(claims, email, ttlMs);
     }
 
     private String buildToken(Map<String, Object> extraClaims, String subject, long ttlMs) {
@@ -122,6 +130,10 @@ public class JwtTokenUtil {
 
     public boolean isAccessToken(String token) {
         return TYPE_ACCESS.equals(extractClaim(token, c -> c.get(CLAIM_TYPE, String.class)));
+    }
+
+    public boolean isPasswordResetToken(String token) {
+        return TYPE_PASSWORD_RESET.equals(extractClaim(token, c -> c.get(CLAIM_TYPE, String.class)));
     }
 
     // ----------------------------------------------------------------

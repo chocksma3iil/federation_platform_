@@ -48,7 +48,7 @@ public class CompetitionRegistrationController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(created));
     }
 
-    @PatchMapping("/me/{registrationId}/cancel")
+        @PatchMapping("/me/{registrationId:[0-9a-fA-F-]{36}}/cancel")
     @PreAuthorize("hasAuthority(T(com.federation.users.entity.UserRole).ATHLETE)")
     public ResponseEntity<ApiResponse<CompetitionRegistrationResponse>> cancelMyRegistration(
             @AuthenticationPrincipal FederationUserDetails principal,
@@ -82,7 +82,7 @@ public class CompetitionRegistrationController {
                 return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(created));
         }
 
-    @PatchMapping("/{registrationId}/status")
+        @PatchMapping("/{registrationId:[0-9a-fA-F-]{36}}/status")
     @PreAuthorize("hasAnyAuthority(T(com.federation.users.entity.UserRole).ADMIN, T(com.federation.users.entity.UserRole).FEDERATION_STAFF)")
     public ResponseEntity<ApiResponse<CompetitionRegistrationResponse>> updateStatus(
             @PathVariable UUID registrationId,

@@ -48,7 +48,7 @@ public class ResultController {
     }
 
     @Operation(summary = "Get results for a specific event and round (ordered by rank)")
-    @GetMapping("/event/{eventId}")
+    @GetMapping("/event/{eventId:[0-9a-fA-F-]{36}}")
     public ResponseEntity<ApiResponse<List<ResultResponse>>> findByEvent(
             @PathVariable UUID   eventId,
             @RequestParam(defaultValue = "FINAL") String round) {

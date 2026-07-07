@@ -105,6 +105,39 @@ public class AuthController {
     }
 
     // ----------------------------------------------------------------
+    // POST /auth/forgot-password
+    // ----------------------------------------------------------------
+
+    @Operation(
+        summary = "Request password reset",
+        description = "Always returns a generic success message to prevent account enumeration."
+    )
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse<Void>> forgotPassword(
+            @Valid @RequestBody ForgotPasswordRequest request) {
+
+        authService.requestPasswordReset(request);
+        return ResponseEntity.ok(ApiResponse.ok(null,
+                "If an account exists for this email, you'll receive a reset link."));
+    }
+
+    // ----------------------------------------------------------------
+    // POST /auth/reset-password
+    // ----------------------------------------------------------------
+
+    @Operation(
+        summary = "Reset password",
+        description = "Resets password using a valid reset token."
+    )
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse<Void>> resetPassword(
+            @Valid @RequestBody ResetPasswordRequest request) {
+
+        authService.resetPassword(request);
+        return ResponseEntity.ok(ApiResponse.ok(null, "Password has been reset successfully."));
+    }
+
+    // ----------------------------------------------------------------
     // POST /auth/logout
     // ----------------------------------------------------------------
 

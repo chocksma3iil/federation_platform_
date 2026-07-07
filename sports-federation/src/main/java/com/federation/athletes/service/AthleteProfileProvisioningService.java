@@ -34,10 +34,30 @@ public class AthleteProfileProvisioningService {
     }
 
     @Transactional
+    public Athlete ensureAthleteProfile(UUID userId, Gender preferredGender) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+        return ensureAthleteProfile(user, preferredGender);
+    }
+
+    @Transactional
     public Athlete ensureAthleteProfile(User user) {
+        return ensureAthleteProfile(user, null);
+    }
+
+    @Transactional
+    public Athlete ensureAthleteProfile(User user, Gender preferredGender) {
         List<Athlete> existingAthletes = athleteRepository.findAllByUserIdOrderByCreatedAtDesc(user.getId());
         if (!existingAthletes.isEmpty()) {
-            return existingAthletes.get(0);
+            Athlete athlete = existingAthletes.get(0);
+            athlete.setFirstName(user.getFirstName());
+            athlete.setLastName(user.getLastName());
+            athlete.setEmail(user.getEmail());
+            athlete.setPhone(user.getPhone());
+            if (preferredGender != null) {
+                athlete.setGender(preferredGender);
+            }
+            return athleteRepository.save(athlete);
         }
 
         if (user.getRole() != UserRole.ROLE_ATHLETE) {
@@ -50,7 +70,7 @@ public class AthleteProfileProvisioningService {
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
                 .dateOfBirth(LocalDate.now().minusYears(18))
-                .gender(Gender.OTHER)
+            .gender(preferredGender != null ? preferredGender : Gender.OTHER)
                 .nationality("Tunisian")
                 .countryCode("TUN")
                 .email(user.getEmail())

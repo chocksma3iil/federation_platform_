@@ -95,7 +95,7 @@ public class AthleteController {
     }
 
     @Operation(summary = "Assign athlete user to a club")
-    @PostMapping("/users/{userId}/club")
+    @PostMapping("/users/{userId:[0-9a-fA-F-]{36}}/club")
     public ResponseEntity<ApiResponse<AthleteResponse>> assignClubByUser(
             @PathVariable UUID userId,
             @Valid @RequestBody AthleteClubAssignmentRequest request) {

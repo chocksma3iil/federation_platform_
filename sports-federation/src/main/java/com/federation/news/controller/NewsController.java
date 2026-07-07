@@ -81,7 +81,7 @@ public class NewsController {
     }
 
     @Operation(summary = "Publish a news article")
-    @PatchMapping("/{id}/publish")
+    @PatchMapping("/{id:[0-9a-fA-F-]{36}}/publish")
     public ResponseEntity<ApiResponse<NewsResponse>> publish(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.ok(newsService.publish(id)));
     }

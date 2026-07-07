@@ -8,7 +8,8 @@ import { environment } from '@environments/environment';
 import { TokenService } from './token.service';
 import {
   User, UserRole, LoginRequest, RegisterRequest, AuthResponse,
-  RefreshTokenRequest, ChangePasswordRequest, ApiResponse
+  RefreshTokenRequest, ChangePasswordRequest, ForgotPasswordRequest,
+  ResetPasswordRequest, ApiResponse
 } from '@core/models';
 
 @Injectable({ providedIn: 'root' })
@@ -132,6 +133,18 @@ export class AuthService {
           queryParams: { message: 'password_changed' }
         });
       })
+    );
+  }
+
+  forgotPassword(request: ForgotPasswordRequest): Observable<any> {
+    return this.http.post<ApiResponse<void>>(`${this.apiUrl}/forgot-password`, request).pipe(
+      map(r => r.data)
+    );
+  }
+
+  resetPassword(request: ResetPasswordRequest): Observable<any> {
+    return this.http.post<ApiResponse<void>>(`${this.apiUrl}/reset-password`, request).pipe(
+      map(r => r.data)
     );
   }
 

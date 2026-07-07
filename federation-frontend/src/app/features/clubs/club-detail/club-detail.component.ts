@@ -33,6 +33,7 @@ interface ClubDetail {
   email?: string;
   phone?: string;
   status: string;
+  managerId?: string;
   managerName?: string;
   activeAthletes?: number;
   createdAt?: string;
@@ -71,10 +72,12 @@ interface ClubDetail {
         <a mat-stroked-button routerLink="/admin/clubs" actions>
           <mat-icon>arrow_back</mat-icon> Back
         </a>
-        @if (canManage) {
+        @if (canEditClub) {
           <a mat-stroked-button [routerLink]="['/admin/clubs', club()!.id, 'edit']" actions>
             <mat-icon>edit</mat-icon> Edit
           </a>
+        }
+        @if (canDeleteClub) {
           <button mat-flat-button color="warn" (click)="confirmDelete()" actions>
             <mat-icon>delete</mat-icon> Delete
           </button>
@@ -140,7 +143,7 @@ interface ClubDetail {
 
             <mat-tab label="Roster">
               <div class="p-6">
-                @if (canManage) {
+                @if (canAssignRoster) {
                   <div class="mb-4 flex items-end gap-3">
                     <mat-form-field appearance="outline" class="w-96">
                       <mat-label>Assign athlete to this club</mat-label>
@@ -210,21 +213,39 @@ export class ClubDetailComponent implements OnInit {
   assignableAthletes = signal<any[]>([]);
   selectedAthleteId: string | null = null;
 
-  get canManage(): boolean {
-    return this.auth.hasAnyRole([UserRole.ADMIN, UserRole.FEDERATION_STAFF]);
+  private isMyManagedClub(): boolean {
+    const c = this.club();
+    const currentUserId = this.auth.currentUser()?.id;
+    return !!c?.managerId && !!currentUserId && c.managerId === currentUserId;
+  }
+
+  get canEditClub(): boolean {
+    if (this.auth.hasAnyRole([UserRole.ADMIN, UserRole.FEDERATION_STAFF])) {
+      return true;
+    }
+    if (this.auth.hasRole(UserRole.CLUB_MANAGER)) {
+      return this.isMyManagedClub();
+    }
+    return false;
+  }
+
+  get canDeleteClub(): boolean {
+    return this.auth.hasAnyRole([UserRole.ADMIN]);
+  }
+
+  get canAssignRoster(): boolean {
+    if (this.auth.hasAnyRole([UserRole.ADMIN, UserRole.FEDERATION_STAFF])) {
+      return true;
+    }
+    if (this.auth.hasRole(UserRole.CLUB_MANAGER)) {
+      return this.isMyManagedClub();
+    }
+    return false;
   }
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id')!;
-    this.api.get<ClubDetail>(`/clubs/${id}`).subscribe({
-      next: c => {
-        this.club.set(c);
-        this.loading.set(false);
-        this.loadRoster(c.id);
-        this.loadAssignableAthletes(c.id);
-      },
-      error: () => this.loading.set(false),
-    });
+    this.loadClub(id);
   }
 
   clubInfo(): Array<{ label: string; value: string }> {
@@ -299,12 +320,29 @@ export class ClubDetailComponent implements OnInit {
       next: () => {
         this.notify.success('Athlete assigned to club.');
         this.selectedAthleteId = null;
+        this.loadClub(club.id, false);
         this.loadRoster(club.id);
         this.loadAssignableAthletes(club.id);
       },
       error: (err) => {
         this.notify.error(err?.error?.message ?? 'Could not assign athlete to club.');
       },
+    });
+  }
+
+  private loadClub(id: string, showSpinner = true): void {
+    if (showSpinner) {
+      this.loading.set(true);
+    }
+
+    this.api.get<ClubDetail>(`/clubs/${id}`).subscribe({
+      next: c => {
+        this.club.set(c);
+        this.loading.set(false);
+        this.loadRoster(c.id);
+        this.loadAssignableAthletes(c.id);
+      },
+      error: () => this.loading.set(false),
     });
   }
 }
