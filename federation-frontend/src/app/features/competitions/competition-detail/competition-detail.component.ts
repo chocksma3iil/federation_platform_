@@ -10,7 +10,9 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { PageHeaderComponent } from '@shared/components/page-header/page-header.component';
 import { ApiService } from '@core/services/api.service';
+import { AuthService } from '@core/services/auth.service';
 import { NotificationService } from '@core/services/notification.service';
+import { UserRole } from '@core/models';
 import { LoadingSpinnerComponent } from '@shared/components/loading-spinner/loading-spinner.component';
 import { ConfirmDialogComponent } from '@shared/components/confirm-dialog/confirm-dialog.component';
 
@@ -46,12 +48,14 @@ interface EventItem {
         [subtitle]="competition()!.sport"
         [breadcrumbs]="[{ label: 'Competitions', path: '/admin/competitions' }, { label: competition()!.name }]">
         <a mat-stroked-button routerLink="/admin/competitions" actions><mat-icon>arrow_back</mat-icon> Back</a>
-        <a mat-stroked-button [routerLink]="['/admin/competitions', competition()!.id, 'edit']" actions>
-          <mat-icon>edit</mat-icon> Edit
-        </a>
-        <button mat-flat-button color="warn" (click)="confirmDelete()" actions>
-          <mat-icon>delete</mat-icon> Delete
-        </button>
+        @if (canManage) {
+          <a mat-stroked-button [routerLink]="['/admin/competitions', competition()!.id, 'edit']" actions>
+            <mat-icon>edit</mat-icon> Edit
+          </a>
+          <button mat-flat-button color="warn" (click)="confirmDelete()" actions>
+            <mat-icon>delete</mat-icon> Delete
+          </button>
+        }
       </app-page-header>
 
       <div class="card-padded space-y-3 mb-6">
@@ -70,13 +74,15 @@ interface EventItem {
       <div class="card-padded">
         <div class="flex items-center justify-between mb-4">
           <h3 class="font-semibold text-surface-800 text-lg">Events ({{ events().length }})</h3>
-          <button mat-flat-button color="primary" (click)="showEventForm = !showEventForm">
-            <mat-icon>{{ showEventForm ? 'close' : 'add' }}</mat-icon>
-            {{ showEventForm ? 'Cancel' : 'Add Event' }}
-          </button>
+          @if (canManage) {
+            <button mat-flat-button color="primary" (click)="showEventForm = !showEventForm">
+              <mat-icon>{{ showEventForm ? 'close' : 'add' }}</mat-icon>
+              {{ showEventForm ? 'Cancel' : 'Add Event' }}
+            </button>
+          }
         </div>
 
-        @if (showEventForm) {
+        @if (showEventForm && canManage) {
           <form [formGroup]="eventForm" (ngSubmit)="submitEvent()" class="border border-surface-200 rounded-lg p-4 mb-4 space-y-3">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
               <mat-form-field appearance="outline">
@@ -135,7 +141,7 @@ interface EventItem {
                   <th class="text-left p-3 font-semibold">Gender</th>
                   <th class="text-left p-3 font-semibold">Age Category</th>
                   <th class="text-left p-3 font-semibold">Max</th>
-                  <th class="text-left p-3 font-semibold">Actions</th>
+                  @if (canManage) { <th class="text-left p-3 font-semibold">Actions</th> }
                 </tr>
               </thead>
               <tbody>
@@ -146,11 +152,13 @@ interface EventItem {
                     <td class="p-3">{{ e.genderCategory || 'Any' }}</td>
                     <td class="p-3">{{ e.ageCategory || 'Any' }}</td>
                     <td class="p-3">{{ e.maxParticipants || '—' }}</td>
-                    <td class="p-3">
-                      <button mat-icon-button color="warn" (click)="deleteEvent(e)">
-                        <mat-icon>delete</mat-icon>
-                      </button>
-                    </td>
+                    @if (canManage) {
+                      <td class="p-3">
+                        <button mat-icon-button color="warn" (click)="deleteEvent(e)">
+                          <mat-icon>delete</mat-icon>
+                        </button>
+                      </td>
+                    }
                   </tr>
                 }
               </tbody>
@@ -165,9 +173,14 @@ export class CompetitionDetailComponent implements OnInit {
   private api = inject(ApiService);
   private fb = inject(FormBuilder);
   private route = inject(ActivatedRoute);
+  private auth = inject(AuthService);
   private notify = inject(NotificationService);
   private router = inject(Router);
   private dialog = inject(MatDialog);
+
+  get canManage(): boolean {
+    return this.auth.hasAnyRole([UserRole.ADMIN, UserRole.FEDERATION_STAFF]);
+  }
 
   competition = signal<any | null>(null);
   loading = signal(true);

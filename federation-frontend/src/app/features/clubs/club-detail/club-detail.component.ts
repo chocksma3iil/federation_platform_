@@ -14,9 +14,11 @@ import { ConfirmDialogComponent } from '@shared/components/confirm-dialog/confir
 import { ApiService } from '@core/services/api.service';
 import { AuthService } from '@core/services/auth.service';
 import { NotificationService } from '@core/services/notification.service';
-import { UserRole } from '@core/models';
+//import { UserRole } from '@core/models';
+import { AiService } from '@core/services/ai.service';
+import { Prediction } from '@core/models';
 
-interface ClubDetail {
+/*interface ClubDetail {
   id: string;
   name: string;
   shortName?: string;
@@ -38,7 +40,9 @@ interface ClubDetail {
   activeAthletes?: number;
   createdAt?: string;
   updatedAt?: string;
-}
+}*/
+
+import { Club, UserRole } from '@core/models';
 
 @Component({
   selector: 'app-club-detail',
@@ -192,6 +196,48 @@ interface ClubDetail {
                 }
               </div>
             </mat-tab>
+            <mat-tab label="AI Insights">
+  <div class="p-6 space-y-4">
+    @if (predictionLoading()) {
+      <app-loading-spinner message="Analyzing club growth…" />
+    } @else if (prediction()) {
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="rounded-lg border border-surface-200 p-4">
+          <p class="text-xs text-surface-500 uppercase">Forecast (next period)</p>
+          <p class="mt-1 text-2xl font-bold text-surface-900">{{ prediction()!.forecast }}</p>
+          <p class="text-xs text-surface-400">Range: {{ prediction()!.forecastRangeLow }}–{{ prediction()!.forecastRangeHigh }}</p>
+        </div>
+        <div class="rounded-lg border border-surface-200 p-4">
+          <p class="text-xs text-surface-500 uppercase">Trend</p>
+          <p class="mt-1 text-lg font-semibold">{{ prediction()!.trend }}</p>
+          <p class="text-xs text-surface-400">Confidence: {{ prediction()!.confidence }}</p>
+        </div>
+        <div class="rounded-lg border border-surface-200 p-4">
+          <p class="text-xs text-surface-500 uppercase">Summary</p>
+          <p class="mt-1 text-sm text-surface-700">{{ prediction()!.summary }}</p>
+        </div>
+      </div>
+      @if (prediction()!.riskFactors.length) {
+        <div>
+          <h4 class="text-sm font-semibold text-surface-700 mb-1">Risk factors</h4>
+          <ul class="list-disc list-inside text-sm text-surface-600">
+            @for (r of prediction()!.riskFactors; track r) { <li>{{ r }}</li> }
+          </ul>
+        </div>
+      }
+      @if (prediction()!.recommendations.length) {
+        <div>
+          <h4 class="text-sm font-semibold text-surface-700 mb-1">Recommendations</h4>
+          <ul class="list-disc list-inside text-sm text-surface-600">
+            @for (r of prediction()!.recommendations; track r) { <li>{{ r }}</li> }
+          </ul>
+        </div>
+      }
+    } @else {
+      <p class="text-sm text-surface-400">No prediction available yet.</p>
+    }
+  </div>
+</mat-tab>
           </mat-tab-group>
         </div>
       </div>
@@ -206,7 +252,7 @@ export class ClubDetailComponent implements OnInit {
   private router = inject(Router);
   private dialog = inject(MatDialog);
 
-  club = signal<ClubDetail | null>(null);
+  club = signal<Club | null>(null);
   loading = signal(true);
   roster = signal<any[]>([]);
   rosterLoading = signal(false);
@@ -335,14 +381,30 @@ export class ClubDetailComponent implements OnInit {
       this.loading.set(true);
     }
 
-    this.api.get<ClubDetail>(`/clubs/${id}`).subscribe({
+    this.api.get<Club>(`/clubs/${id}`).subscribe({
       next: c => {
         this.club.set(c);
         this.loading.set(false);
         this.loadRoster(c.id);
         this.loadAssignableAthletes(c.id);
+        this.loadPrediction(c.id);
       },
       error: () => this.loading.set(false),
     });
+    // call it inside loadClub()'s next callback, alongside loadRoster/loadAssignableAthletes:
+    
   }
+  private ai = inject(AiService);
+prediction = signal<Prediction | null>(null);
+predictionLoading = signal(false);
+
+private loadPrediction(clubId: string): void {
+  this.predictionLoading.set(true);
+  this.ai.getClubPrediction(clubId).subscribe({
+    next: p => { this.prediction.set(p); this.predictionLoading.set(false); },
+    error: () => this.predictionLoading.set(false),
+  });
+}
+
+
 }

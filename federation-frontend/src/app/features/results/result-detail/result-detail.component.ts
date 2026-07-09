@@ -5,6 +5,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { PageHeaderComponent } from '@shared/components/page-header/page-header.component';
 import { ApiService } from '@core/services/api.service';
+import { AuthService } from '@core/services/auth.service';
+import { UserRole } from '@core/models';
 import { LoadingSpinnerComponent } from '@shared/components/loading-spinner/loading-spinner.component';
 
 @Component({
@@ -19,9 +21,11 @@ import { LoadingSpinnerComponent } from '@shared/components/loading-spinner/load
         [subtitle]="result()!.athleteName || 'Athlete'"
         [breadcrumbs]="[{ label: 'Results', path: '/admin/results' }, { label: 'Details' }]">
         <a mat-stroked-button routerLink="/admin/results" actions><mat-icon>arrow_back</mat-icon> Back</a>
-        <a mat-stroked-button [routerLink]="['/admin/results', result()!.id, 'edit']" actions>
-          <mat-icon>edit</mat-icon> Edit
-        </a>
+        @if (canManage) {
+          <a mat-stroked-button [routerLink]="['/admin/results', result()!.id, 'edit']" actions>
+            <mat-icon>edit</mat-icon> Edit
+          </a>
+        }
       </app-page-header>
 
       <div class="card-padded grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -37,7 +41,12 @@ import { LoadingSpinnerComponent } from '@shared/components/loading-spinner/load
 })
 export class ResultDetailComponent implements OnInit {
   private api = inject(ApiService);
+  private auth = inject(AuthService);
   private route = inject(ActivatedRoute);
+
+  get canManage(): boolean {
+    return this.auth.hasAnyRole([UserRole.ADMIN, UserRole.FEDERATION_STAFF]);
+  }
 
   result = signal<any | null>(null);
   loading = signal(true);

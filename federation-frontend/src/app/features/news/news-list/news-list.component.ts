@@ -11,7 +11,9 @@ import { MatMenuModule } from '@angular/material/menu';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { PageHeaderComponent } from '@shared/components/page-header/page-header.component';
 import { ApiService } from '@core/services/api.service';
+import { AuthService } from '@core/services/auth.service';
 import { NotificationService } from '@core/services/notification.service';
+import { UserRole } from '@core/models';
 import { LoadingSpinnerComponent } from '@shared/components/loading-spinner/loading-spinner.component';
 
 interface NewsItem {
@@ -33,8 +35,10 @@ interface NewsItem {
     PageHeaderComponent, LoadingSpinnerComponent,
   ],
   template: `
-    <app-page-header title="News" [breadcrumbs]="[{ label: 'Admin' }, { label: 'News' }]">
-      <a mat-flat-button color="primary" routerLink="new" actions><mat-icon>edit_note</mat-icon> New Article</a>
+    <app-page-header title="News" [breadcrumbs]="[{ label: 'News' }]">
+      @if (canManage) {
+        <a mat-flat-button color="primary" routerLink="new" actions><mat-icon>edit_note</mat-icon> New Article</a>
+      }
     </app-page-header>
 
     <div class="card-padded mb-4 flex flex-wrap gap-3">
@@ -63,7 +67,11 @@ interface NewsItem {
             <p class="text-sm text-surface-500 mt-1">{{ n.excerpt || 'No excerpt' }}</p>
             <p class="text-xs text-surface-400 mt-1">{{ n.category || 'GENERAL' }} · {{ n.status }}</p>
           </a>
-          <button mat-icon-button [matMenuTriggerFor]="menu" [matMenuTriggerData]="{ item: n }"><mat-icon>more_vert</mat-icon></button>
+          @if (canManage) {
+            <button mat-icon-button [matMenuTriggerFor]="menu" [matMenuTriggerData]="{ item: n }" (click)="$event.stopPropagation()">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+          }
         </div>
       }
       @if (!loading() && articles().length === 0) {
@@ -84,7 +92,12 @@ interface NewsItem {
 })
 export class NewsListComponent implements OnInit {
   private api = inject(ApiService);
+  private auth = inject(AuthService);
   private notify = inject(NotificationService);
+
+  get canManage(): boolean {
+    return this.auth.hasAnyRole([UserRole.ADMIN, UserRole.FEDERATION_STAFF]);
+  }
 
   articles = signal<NewsItem[]>([]);
   loading = signal(true);

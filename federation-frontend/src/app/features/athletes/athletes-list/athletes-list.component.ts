@@ -204,8 +204,7 @@ export interface Athlete {
             <ng-container matColumnDef="actions">
               <th mat-header-cell *matHeaderCellDef class="!w-14"></th>
               <td mat-cell *matCellDef="let a" class="!py-3 !pr-4">
-                <button mat-icon-button [matMenuTriggerFor]="rowMenu" [matMenuTriggerData]="{ athlete: a }">
-                  <mat-icon>more_vert</mat-icon>
+<button mat-icon-button [matMenuTriggerFor]="rowMenu" [matMenuTriggerData]="{ athlete: a }" (click)="$event.stopPropagation()">                  <mat-icon>more_vert</mat-icon>
                 </button>
               </td>
             </ng-container>

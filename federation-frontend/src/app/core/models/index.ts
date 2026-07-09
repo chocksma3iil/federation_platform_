@@ -130,3 +130,106 @@ export interface NavItem {
   roles?:   UserRole[];
   children?: NavItem[];
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Club & Athlete Models
+// ═══════════════════════════════════════════════════════════════════════════
+
+
+export enum ClubStatus {
+  ACTIVE    = 'ACTIVE',
+  SUSPENDED = 'SUSPENDED',
+  DISSOLVED = 'DISSOLVED',
+}
+
+export interface Club {
+  id:             string;
+  name:           string;
+  shortName?:     string;
+  slug:           string;
+  licenseNumber:  string;
+  city?:          string;
+  region?:        string;
+  country?:       string;
+  address?:       string;
+  foundedYear?:   number;
+  description?:   string;
+  logoUrl?:       string;
+  website?:       string;
+  email?:         string;
+  phone?:         string;
+  status:         ClubStatus;
+  managerId?:     string;
+  managerName?:   string;
+  activeAthletes: number;
+  createdAt:      string;
+  updatedAt:      string;
+}
+
+export interface ClubRequest {
+  name:          string;
+  shortName?:    string;
+  licenseNumber: string;
+  city?:         string;
+  region?:       string;
+  country?:      string;
+  address?:      string;
+  foundedYear?:  number;
+  description?:  string;
+  logoUrl?:      string;
+  website?:      string;
+  email?:        string;
+  phone?:        string;
+  status?:       ClubStatus;
+  managerId?:    string;
+}
+
+export interface Athlete {
+  id:            string;
+  licenseNumber: string;
+  firstName:     string;
+  lastName:      string;
+  fullName?:     string;
+  gender:        string;
+  category:      string;
+  status:        string;
+  clubName?:     string;
+  clubId?:       string;
+  nationality:   string;
+  dateOfBirth:   string;
+  photoUrl?:     string;
+  createdAt:     string;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// AI Feature Models (Club Assistant + Growth Prediction)
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface Prediction {
+  forecast: number;
+  confidence: 'HIGH' | 'MEDIUM' | 'LOW';
+  trend: 'GROWING' | 'STABLE' | 'DECLINING';
+  forecastRangeLow: number;
+  forecastRangeHigh: number;
+  historicalEstimates: [number, number, number]; // 3,2,1 years ago
+  riskFactors: string[];
+  recommendations: string[];
+  summary: string;
+}
+
+// ── Chat / AI ─────────────────────────────────────────────────────
+export interface ChatMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+}
+
+export interface ChatAction {
+  action: 'createClub' | 'updateClub' | 'deleteClub' | 'searchClubs';
+  data?: any;
+  query?: string;
+}
+
+export interface AiChatResponse {
+  reply:   string;
+  action?: ChatAction;
+}

@@ -10,7 +10,9 @@ import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { PageHeaderComponent } from '@shared/components/page-header/page-header.component';
 import { ApiService } from '@core/services/api.service';
+import { AuthService } from '@core/services/auth.service';
 import { NotificationService } from '@core/services/notification.service';
+import { UserRole } from '@core/models';
 import { LoadingSpinnerComponent } from '@shared/components/loading-spinner/loading-spinner.component';
 
 interface Competition {
@@ -32,8 +34,10 @@ interface Competition {
     PageHeaderComponent, LoadingSpinnerComponent,
   ],
   template: `
-    <app-page-header title="Competitions" [breadcrumbs]="[{ label: 'Admin' }, { label: 'Competitions' }]">
-      <a mat-flat-button color="primary" routerLink="new" actions><mat-icon>add</mat-icon> New Competition</a>
+    <app-page-header title="Competitions" [breadcrumbs]="[{ label: 'Competitions' }]">
+      @if (canManage) {
+        <a mat-flat-button color="primary" routerLink="new" actions><mat-icon>add</mat-icon> New Competition</a>
+      }
     </app-page-header>
 
     <div class="card-padded mb-4">
@@ -73,7 +77,12 @@ interface Competition {
 })
 export class CompetitionsListComponent implements OnInit {
   private api = inject(ApiService);
+  private auth = inject(AuthService);
   private notify = inject(NotificationService);
+
+  get canManage(): boolean {
+    return this.auth.hasAnyRole([UserRole.ADMIN, UserRole.FEDERATION_STAFF]);
+  }
 
   competitions = signal<Competition[]>([]);
   loading = signal(true);
@@ -84,10 +93,10 @@ export class CompetitionsListComponent implements OnInit {
   ngOnInit(): void {
     this.load();
     this.searchCtrl.valueChanges.pipe(debounceTime(350), distinctUntilChanged())
-      .subscribe(() => {
-        this.pageIndex.set(0);
-        this.load();
-      });
+        .subscribe(() => {
+          this.pageIndex.set(0);
+          this.load();
+        });
   }
 
   load(): void {

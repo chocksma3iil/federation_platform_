@@ -19,6 +19,9 @@ import { PageHeaderComponent }     from '@shared/components/page-header/page-hea
 import { StatusChipComponent }     from '@shared/components/status-chip/status-chip.component';
 import { LoadingSpinnerComponent } from '@shared/components/loading-spinner/loading-spinner.component';
 import { EmptyStateComponent }     from '@shared/components/empty-state/empty-state.component';
+import { MatDialog } from '@angular/material/dialog';
+import { ClubAiAssistantComponent } from '../club-ai-assistant/club-ai-assistant.component';
+
 
 export interface Club {
   id: string;
@@ -46,9 +49,10 @@ export interface Club {
     <app-page-header title="Clubs"
       [breadcrumbs]="[{ label: 'Admin', path: '/admin' }, { label: 'Clubs' }]">
       @if (canManage) {
-        <a mat-flat-button color="primary" routerLink="new" actions>
-          <mat-icon>add</mat-icon> New Club
-        </a>
+        <a mat-flat-button color="primary" routerLink="new" actions><mat-icon>add</mat-icon> New Club</a>
+        <button mat-stroked-button (click)="openAiAssistant()" actions>
+          <mat-icon>auto_awesome</mat-icon> Ask AI
+        </button>
       }
     </app-page-header>
 
@@ -289,4 +293,12 @@ export class ClubsListComponent implements OnInit {
       },
     });
   }
+
+  private dialog = inject(MatDialog);
+
+openAiAssistant(): void {
+  const ref = this.dialog.open(ClubAiAssistantComponent, { width: '460px', panelClass: 'ai-assistant-panel' });
+  ref.afterClosed().subscribe(() => this.load()); // refresh list after any AI-driven change
+}
+
 }

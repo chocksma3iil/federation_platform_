@@ -9,7 +9,9 @@ import { MatInputModule } from '@angular/material/input';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { PageHeaderComponent } from '@shared/components/page-header/page-header.component';
 import { ApiService } from '@core/services/api.service';
+import { AuthService } from '@core/services/auth.service';
 import { NotificationService } from '@core/services/notification.service';
+import { UserRole } from '@core/models';
 import { LoadingSpinnerComponent } from '@shared/components/loading-spinner/loading-spinner.component';
 
 interface ResultItem {
@@ -32,8 +34,10 @@ interface ResultItem {
     PageHeaderComponent, LoadingSpinnerComponent,
   ],
   template: `
-    <app-page-header title="Results" [breadcrumbs]="[{ label: 'Admin' }, { label: 'Results' }]">
-      <a mat-flat-button color="primary" routerLink="new" actions><mat-icon>add</mat-icon> Enter Result</a>
+    <app-page-header title="Results" [breadcrumbs]="[{ label: 'Results' }]">
+      @if (canManage) {
+        <a mat-flat-button color="primary" routerLink="new" actions><mat-icon>add</mat-icon> Enter Result</a>
+      }
     </app-page-header>
 
     <div class="card-padded mb-4">
@@ -63,7 +67,12 @@ interface ResultItem {
 })
 export class ResultsListComponent implements OnInit {
   private api = inject(ApiService);
+  private auth = inject(AuthService);
   private notify = inject(NotificationService);
+
+  get canManage(): boolean {
+    return this.auth.hasAnyRole([UserRole.ADMIN, UserRole.FEDERATION_STAFF]);
+  }
 
   loading = signal(true);
   results = signal<ResultItem[]>([]);
