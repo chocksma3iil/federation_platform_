@@ -41,7 +41,12 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-
+import com.federation.auth.security.FederationUserDetails;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.server.ResponseStatusException;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -202,7 +207,33 @@ public class UserController {
 
         return ResponseEntity.ok(ApiResponse.ok(toResponse(saved)));
     }
+@Operation(summary = "Delete a user")
+@DeleteMapping("/{id:[0-9a-fA-F-]{36}}")
+@PreAuthorize("hasAuthority('ROLE_ADMIN')")
+public ResponseEntity<ApiResponse<Void>> delete(
+        @PathVariable UUID id,
+        @AuthenticationPrincipal FederationUserDetails principal) {
 
+    User user = userRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
+
+    if (principal != null && id.equals(principal.getId())) {
+        throw new ResponseStatusException(HttpStatus.CONFLICT, "You cannot delete your own account.");
+    }
+
+    // Remove dependent athlete profile(s) first to satisfy the FK constraint.
+    athleteRepository.findFirstByUserIdOrderByCreatedAtDesc(id)
+            .ifPresent(athleteRepository::delete);
+
+    try {
+        userRepository.delete(user);
+    } catch (DataIntegrityViolationException ex) {
+        throw new ResponseStatusException(HttpStatus.CONFLICT,
+                "This user cannot be deleted because related records still reference it.");
+    }
+
+    return ResponseEntity.ok(ApiResponse.ok(null));
+}
     private static String normalize(String input) {
         return input == null ? null : input.trim();
     }

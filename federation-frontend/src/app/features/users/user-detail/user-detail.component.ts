@@ -1,10 +1,11 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, ActivatedRoute } from '@angular/router';
+import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { PageHeaderComponent } from '@shared/components/page-header/page-header.component';
 import { ApiService } from '@core/services/api.service';
+import { NotificationService } from '@core/services/notification.service';
 import { LoadingSpinnerComponent } from '@shared/components/loading-spinner/loading-spinner.component';
 
 @Component({
@@ -22,6 +23,9 @@ import { LoadingSpinnerComponent } from '@shared/components/loading-spinner/load
         <a mat-flat-button color="primary" [routerLink]="['/admin/users', user()!.id, 'edit']" actions>
           <mat-icon>edit</mat-icon> Edit
         </a>
+        <button mat-stroked-button color="warn" actions [disabled]="deleting()" (click)="onDelete()">
+          <mat-icon>delete</mat-icon> {{ deleting() ? 'Deleting...' : 'Delete' }}
+        </button>
       </app-page-header>
 
       <div class="card-padded grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -37,9 +41,12 @@ import { LoadingSpinnerComponent } from '@shared/components/loading-spinner/load
 export class UserDetailComponent implements OnInit {
   private api = inject(ApiService);
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  private notify = inject(NotificationService);
 
   user = signal<any | null>(null);
   loading = signal(true);
+  deleting = signal(false);
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id')!;
@@ -49,6 +56,29 @@ export class UserDetailComponent implements OnInit {
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
+    });
+  }
+
+  onDelete(): void {
+    const u = this.user();
+    if (!u) return;
+
+    const confirmed = window.confirm(
+      `Delete ${u.fullName || u.username}? This action cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    this.deleting.set(true);
+    this.api.delete<void>(`/users/${u.id}`).subscribe({
+      next: () => {
+        this.notify.success('User deleted successfully.');
+        this.router.navigate(['/admin/users']);
+      },
+      error: (err) => {
+        this.deleting.set(false);
+        const message = err?.error?.message || 'Unable to delete user.';
+        this.notify.error(message);
+      },
     });
   }
 }
