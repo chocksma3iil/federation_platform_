@@ -49,10 +49,14 @@ export interface Club {
     <app-page-header title="Clubs"
       [breadcrumbs]="[{ label: 'Admin', path: '/admin' }, { label: 'Clubs' }]">
       @if (canManage) {
-        <a mat-flat-button color="primary" routerLink="new" actions><mat-icon>add</mat-icon> New Club</a>
-        <button mat-stroked-button (click)="openAiAssistant()" actions>
-          <mat-icon>auto_awesome</mat-icon> Ask AI
-        </button>
+        <ng-container actions>
+          <a mat-flat-button color="primary" routerLink="new">
+            <mat-icon>add</mat-icon> New Club
+          </a>
+          <button mat-stroked-button (click)="openAiAssistant()">
+            <mat-icon>auto_awesome</mat-icon> Ask AI
+          </button>
+        </ng-container>
       }
     </app-page-header>
 
