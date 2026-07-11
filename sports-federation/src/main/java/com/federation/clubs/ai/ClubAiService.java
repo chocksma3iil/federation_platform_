@@ -6,13 +6,20 @@ import com.federation.clubs.entity.Club;
 import com.federation.clubs.repository.ClubRepository;
 import com.federation.common.exception.ResourceNotFoundException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.netty.channel.ChannelOption;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import com.federation.clubs.ai.dto.AiChatResponse;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import reactor.netty.http.client.HttpClient;
+
+import java.time.Duration;
 import java.util.*;
 
 @Slf4j
@@ -30,16 +37,55 @@ public class ClubAiService {
     @Value("${ai.ollama.model}")
     private String ollamaModel;
 
+        @Value("${ai.ollama.keep-alive:20m}")
+        private String keepAlive;
+
+        @Value("${ai.ollama.max-history-messages:8}")
+        private int maxHistoryMessages;
+
+        @Value("${ai.ollama.max-message-chars:700}")
+        private int maxMessageChars;
+
+        @Value("${ai.ollama.max-known-clubs:25}")
+        private int maxKnownClubs;
+
+        @Value("${ai.ollama.num-predict:180}")
+        private int numPredict;
+
+        @Value("${ai.ollama.num-ctx:1024}")
+        private int numCtx;
+
+        @Value("${ai.ollama.temperature:0.1}")
+        private double temperature;
+
+        @Value("${ai.ollama.connect-timeout-ms:2000}")
+        private int connectTimeoutMs;
+
+        @Value("${ai.ollama.response-timeout-ms:45000}")
+        private long responseTimeoutMs;
+
     private WebClient client() {
-        return WebClient.builder().baseUrl(ollamaBaseUrl).build();
+        HttpClient httpClient = HttpClient.create()
+            .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeoutMs)
+            .responseTimeout(Duration.ofMillis(responseTimeoutMs));
+
+        return WebClient.builder()
+            .baseUrl(ollamaBaseUrl)
+            .clientConnector(new ReactorClientHttpConnector(httpClient))
+            .build();
     }
 
     public AiChatResponse handleChat(ChatRequest request) {
-        String lastUserMessage = request.getMessages().stream()
-                .filter(m -> "user".equals(m.role()))
-                .reduce((a, b) -> b)
-                .map(ChatMessageDto::content)
-                .orElse("");
+        List<ChatMessageDto> incoming = Optional.ofNullable(request)
+            .map(ChatRequest::getMessages)
+            .orElseGet(Collections::emptyList);
+
+        String lastUserMessage = incoming.stream()
+            .filter(m -> "user".equalsIgnoreCase(m.role()))
+            .reduce((a, b) -> b)
+            .map(ChatMessageDto::content)
+            .map(this::sanitizeMessage)
+            .orElse("");
 
         String systemPrompt = """
             You are a club-management assistant for a sports federation platform.
@@ -52,18 +98,29 @@ public class ClubAiService {
                 "query": "<free text search query, or null>"
               }
             }
-            Known clubs: %s
+            Known clubs (for disambiguation): %s
             If the request doesn't require any club action, set "action" to null.
             """.formatted(clubNamesSummary());
 
+        List<Map<String, String>> messages = new ArrayList<>();
+        messages.add(Map.of("role", "system", "content", systemPrompt));
+        messages.addAll(recentMessages(incoming));
+
+        if (messages.size() == 1) {
+            messages.add(Map.of("role", "user", "content", lastUserMessage));
+        }
+
         Map<String, Object> body = Map.of(
             "model", ollamaModel,
-            "messages", List.of(
-                Map.of("role", "system", "content", systemPrompt),
-                Map.of("role", "user", "content", lastUserMessage)
-            ),
+            "messages", messages,
             "stream", false,
-            "format", "json"
+            "format", "json",
+            "keep_alive", keepAlive,
+            "options", Map.of(
+                    "num_predict", numPredict,
+                    "num_ctx", numCtx,
+                    "temperature", temperature
+            )
         );
 
         try {
@@ -89,11 +146,45 @@ public class ClubAiService {
     }
 
     private String clubNamesSummary() {
-        return clubRepository.findAll().stream()
+        return clubRepository
+                .findAll(PageRequest.of(0, maxKnownClubs, Sort.by(Sort.Direction.ASC, "name")))
+                .stream()
                 .map(Club::getName)
-                .limit(50)
                 .reduce((a, b) -> a + ", " + b)
                 .orElse("none");
+    }
+
+    private List<Map<String, String>> recentMessages(List<ChatMessageDto> allMessages) {
+        if (allMessages.isEmpty()) {
+            return List.of();
+        }
+
+        int start = Math.max(0, allMessages.size() - maxHistoryMessages);
+        List<Map<String, String>> trimmed = new ArrayList<>();
+
+        for (int i = start; i < allMessages.size(); i++) {
+            ChatMessageDto m = allMessages.get(i);
+            String role = m.role() == null ? "user" : m.role().toLowerCase(Locale.ROOT);
+            if (!"user".equals(role) && !"assistant".equals(role)) {
+                continue;
+            }
+            trimmed.add(Map.of(
+                    "role", role,
+                    "content", sanitizeMessage(m.content())
+            ));
+        }
+
+        return trimmed;
+    }
+
+    private String sanitizeMessage(String content) {
+        if (content == null || content.isBlank()) {
+            return "";
+        }
+        String normalized = content.replaceAll("\\s+", " ").trim();
+        return normalized.length() <= maxMessageChars
+                ? normalized
+                : normalized.substring(0, maxMessageChars);
     }
 
     // predictGrowth(...) stays exactly as before — it's pure data math, no model needed.

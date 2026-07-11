@@ -121,5 +121,14 @@ logging:
 
 ai:
   ollama:
-    base-url: http://localhost:11434
-    model: gemma4:12b
+    base-url: ${AI_OLLAMA_BASE_URL:http://localhost:11434}
+    model: ${AI_OLLAMA_MODEL:gemma3:4b}
+    keep-alive: ${AI_OLLAMA_KEEP_ALIVE:20m}
+    max-history-messages: ${AI_OLLAMA_MAX_HISTORY_MESSAGES:8}
+    max-message-chars: ${AI_OLLAMA_MAX_MESSAGE_CHARS:700}
+    max-known-clubs: ${AI_OLLAMA_MAX_KNOWN_CLUBS:25}
+    num-predict: ${AI_OLLAMA_NUM_PREDICT:180}
+    num-ctx: ${AI_OLLAMA_NUM_CTX:1024}
+    temperature: ${AI_OLLAMA_TEMPERATURE:0.1}
+    connect-timeout-ms: ${AI_OLLAMA_CONNECT_TIMEOUT_MS:2000}
+    response-timeout-ms: ${AI_OLLAMA_RESPONSE_TIMEOUT_MS:45000}
