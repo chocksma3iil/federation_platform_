@@ -122,7 +122,7 @@ logging:
 ai:
   ollama:
     base-url: ${AI_OLLAMA_BASE_URL:http://localhost:11434}
-    model: ${AI_OLLAMA_MODEL:gemma3:4b}
+    model: ${AI_OLLAMA_MODEL:gemma4}
     keep-alive: ${AI_OLLAMA_KEEP_ALIVE:20m}
     max-history-messages: ${AI_OLLAMA_MAX_HISTORY_MESSAGES:8}
     max-message-chars: ${AI_OLLAMA_MAX_MESSAGE_CHARS:700}
